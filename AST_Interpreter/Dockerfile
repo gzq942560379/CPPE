@@ -6,7 +6,8 @@ RUN rm -rf *
 RUN cmake .. -DLLVM_DIR=/usr/local/llvm10ra
 RUN make -j4
 
-ENTRYPOINT ["./ast-interpreter"]
+WORKDIR /root/AST_Interpreter
+CMD [ "./run.sh" ]
 
 
 
