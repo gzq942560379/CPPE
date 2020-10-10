@@ -1,0 +1,58 @@
+TranslationUnitDecl 0x69e89c8 <<invalid sloc>> <invalid sloc>
+|-TypedefDecl 0x69e9260 <<invalid sloc>> <invalid sloc> implicit __int128_t '__int128'
+| `-BuiltinType 0x69e8f60 '__int128'
+|-TypedefDecl 0x69e92d0 <<invalid sloc>> <invalid sloc> implicit __uint128_t 'unsigned __int128'
+| `-BuiltinType 0x69e8f80 'unsigned __int128'
+|-TypedefDecl 0x69e95d8 <<invalid sloc>> <invalid sloc> implicit __NSConstantString 'struct __NSConstantString_tag'
+| `-RecordType 0x69e93b0 'struct __NSConstantString_tag'
+|   `-Record 0x69e9328 '__NSConstantString_tag'
+|-TypedefDecl 0x69e9670 <<invalid sloc>> <invalid sloc> implicit __builtin_ms_va_list 'char *'
+| `-PointerType 0x69e9630 'char *'
+|   `-BuiltinType 0x69e8a60 'char'
+|-TypedefDecl 0x69e9968 <<invalid sloc>> <invalid sloc> implicit __builtin_va_list 'struct __va_list_tag [1]'
+| `-ConstantArrayType 0x69e9910 'struct __va_list_tag [1]' 1 
+|   `-RecordType 0x69e9750 'struct __va_list_tag'
+|     `-Record 0x69e96c8 '__va_list_tag'
+|-FunctionDecl 0x6a46530 <./test/test17.c:1:1, col:16> col:12 GET 'int ()' extern
+|-FunctionDecl 0x6a46700 <line:2:1, col:25> col:15 used MALLOC 'void *(int)' extern
+| `-ParmVarDecl 0x6a46630 <col:22> col:25 'int'
+|-FunctionDecl 0x6a46888 <line:3:1, col:24> col:13 used FREE 'void (void *)' extern
+| `-ParmVarDecl 0x6a467c0 <col:18, col:23> col:24 'void *'
+|-FunctionDecl 0x6a46a08 <line:4:1, col:22> col:13 used PRINT 'void (int)' extern
+| `-ParmVarDecl 0x6a46948 <col:19> col:22 'int'
+`-FunctionDecl 0x6a46ad8 <line:7:1, line:16:1> line:7:5 main 'int ()'
+  `-CompoundStmt 0x6a47108 <col:12, line:16:1>
+    |-DeclStmt 0x6a46c28 <line:8:4, col:10>
+    | `-VarDecl 0x6a46bc0 <col:4, col:9> col:9 used a 'int *'
+    |-DeclStmt 0x6a46cc0 <line:9:4, col:9>
+    | `-VarDecl 0x6a46c58 <col:4, col:8> col:8 used b 'int'
+    |-BinaryOperator 0x6a46d18 <line:10:4, col:8> 'int' '='
+    | |-DeclRefExpr 0x6a46cd8 <col:4> 'int' lvalue Var 0x6a46c58 'b' 'int'
+    | `-IntegerLiteral 0x6a46cf8 <col:8> 'int' 10
+    |-BinaryOperator 0x6a46e70 <line:12:4, col:32> 'int *' '='
+    | |-DeclRefExpr 0x6a46d38 <col:4> 'int *' lvalue Var 0x6a46bc0 'a' 'int *'
+    | `-CStyleCastExpr 0x6a46e48 <col:8, col:32> 'int *' <BitCast>
+    |   `-CallExpr 0x6a46df0 <col:14, col:32> 'void *'
+    |     |-ImplicitCastExpr 0x6a46dd8 <col:14> 'void *(*)(int)' <FunctionToPointerDecay>
+    |     | `-DeclRefExpr 0x6a46d58 <col:14> 'void *(int)' Function 0x6a46700 'MALLOC' 'void *(int)'
+    |     `-ImplicitCastExpr 0x6a46e18 <col:21, col:31> 'int' <IntegralCast>
+    |       `-UnaryExprOrTypeTraitExpr 0x6a46d90 <col:21, col:31> 'unsigned long' sizeof 'int'
+    |-BinaryOperator 0x6a46f18 <line:13:4, col:9> 'int' '='
+    | |-UnaryOperator 0x6a46ec8 <col:4, col:5> 'int' lvalue prefix '*' cannot overflow
+    | | `-ImplicitCastExpr 0x6a46eb0 <col:5> 'int *' <LValueToRValue>
+    | |   `-DeclRefExpr 0x6a46e90 <col:5> 'int *' lvalue Var 0x6a46bc0 'a' 'int *'
+    | `-ImplicitCastExpr 0x6a46f00 <col:9> 'int' <LValueToRValue>
+    |   `-DeclRefExpr 0x6a46ee0 <col:9> 'int' lvalue Var 0x6a46c58 'b' 'int'
+    |-CallExpr 0x6a46ff0 <line:14:4, col:12> 'void'
+    | |-ImplicitCastExpr 0x6a46fd8 <col:4> 'void (*)(int)' <FunctionToPointerDecay>
+    | | `-DeclRefExpr 0x6a46f38 <col:4> 'void (int)' Function 0x6a46a08 'PRINT' 'void (int)'
+    | `-ImplicitCastExpr 0x6a47018 <col:10, col:11> 'int' <LValueToRValue>
+    |   `-UnaryOperator 0x6a46f90 <col:10, col:11> 'int' lvalue prefix '*' cannot overflow
+    |     `-ImplicitCastExpr 0x6a46f78 <col:11> 'int *' <LValueToRValue>
+    |       `-DeclRefExpr 0x6a46f58 <col:11> 'int *' lvalue Var 0x6a46bc0 'a' 'int *'
+    `-CallExpr 0x6a470b0 <line:15:4, col:10> 'void'
+      |-ImplicitCastExpr 0x6a47098 <col:4> 'void (*)(void *)' <FunctionToPointerDecay>
+      | `-DeclRefExpr 0x6a47030 <col:4> 'void (void *)' Function 0x6a46888 'FREE' 'void (void *)'
+      `-ImplicitCastExpr 0x6a470f0 <col:9> 'void *' <BitCast>
+        `-ImplicitCastExpr 0x6a470d8 <col:9> 'int *' <LValueToRValue>
+          `-DeclRefExpr 0x6a47050 <col:9> 'int *' lvalue Var 0x6a46bc0 'a' 'int *'

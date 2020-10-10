@@ -1,0 +1,104 @@
+TranslationUnitDecl 0x73639c8 <<invalid sloc>> <invalid sloc>
+|-TypedefDecl 0x7364260 <<invalid sloc>> <invalid sloc> implicit __int128_t '__int128'
+| `-BuiltinType 0x7363f60 '__int128'
+|-TypedefDecl 0x73642d0 <<invalid sloc>> <invalid sloc> implicit __uint128_t 'unsigned __int128'
+| `-BuiltinType 0x7363f80 'unsigned __int128'
+|-TypedefDecl 0x73645d8 <<invalid sloc>> <invalid sloc> implicit __NSConstantString 'struct __NSConstantString_tag'
+| `-RecordType 0x73643b0 'struct __NSConstantString_tag'
+|   `-Record 0x7364328 '__NSConstantString_tag'
+|-TypedefDecl 0x7364670 <<invalid sloc>> <invalid sloc> implicit __builtin_ms_va_list 'char *'
+| `-PointerType 0x7364630 'char *'
+|   `-BuiltinType 0x7363a60 'char'
+|-TypedefDecl 0x7364968 <<invalid sloc>> <invalid sloc> implicit __builtin_va_list 'struct __va_list_tag [1]'
+| `-ConstantArrayType 0x7364910 'struct __va_list_tag [1]' 1 
+|   `-RecordType 0x7364750 'struct __va_list_tag'
+|     `-Record 0x73646c8 '__va_list_tag'
+|-FunctionDecl 0x73c15a0 <./test/test18.c:1:1, col:16> col:12 GET 'int ()' extern
+|-FunctionDecl 0x73c1770 <line:2:1, col:25> col:15 used MALLOC 'void *(int)' extern
+| `-ParmVarDecl 0x73c16a0 <col:22> col:25 'int'
+|-FunctionDecl 0x73c18f8 <line:3:1, col:24> col:13 used FREE 'void (void *)' extern
+| `-ParmVarDecl 0x73c1830 <col:18, col:23> col:24 'void *'
+|-FunctionDecl 0x73c1a78 <line:4:1, col:22> col:13 used PRINT 'void (int)' extern
+| `-ParmVarDecl 0x73c19b8 <col:19> col:22 'int'
+`-FunctionDecl 0x73c1b48 <line:6:1, line:22:1> line:6:5 main 'int ()'
+  `-CompoundStmt 0x73c3cb8 <col:12, line:22:1>
+    |-DeclStmt 0x73c1c98 <line:7:4, col:10>
+    | `-VarDecl 0x73c1c30 <col:4, col:9> col:9 used a 'int *'
+    |-DeclStmt 0x73c1d60 <line:8:4, col:11>
+    | `-VarDecl 0x73c1cf8 <col:4, col:10> col:10 used b 'int **'
+    |-DeclStmt 0x73c1df8 <line:9:4, col:10>
+    | `-VarDecl 0x73c1d90 <col:4, col:9> col:9 used c 'int *'
+    |-BinaryOperator 0x73c1fa0 <line:10:4, col:34> 'int *' '='
+    | |-DeclRefExpr 0x73c1e10 <col:4> 'int *' lvalue Var 0x73c1c30 'a' 'int *'
+    | `-CStyleCastExpr 0x73c1f78 <col:8, col:34> 'int *' <BitCast>
+    |   `-CallExpr 0x73c1f20 <col:14, col:34> 'void *'
+    |     |-ImplicitCastExpr 0x73c1f08 <col:14> 'void *(*)(int)' <FunctionToPointerDecay>
+    |     | `-DeclRefExpr 0x73c1e30 <col:14> 'void *(int)' Function 0x73c1770 'MALLOC' 'void *(int)'
+    |     `-ImplicitCastExpr 0x73c1f48 <col:21, col:33> 'int' <IntegralCast>
+    |       `-BinaryOperator 0x73c1ec0 <col:21, col:33> 'unsigned long' '*'
+    |         |-UnaryExprOrTypeTraitExpr 0x73c1e68 <col:21, col:31> 'unsigned long' sizeof 'int'
+    |         `-ImplicitCastExpr 0x73c1ea8 <col:33> 'unsigned long' <IntegralCast>
+    |           `-IntegerLiteral 0x73c1e88 <col:33> 'int' 2
+    |-BinaryOperator 0x73c20d8 <line:11:4, col:36> 'int **' '='
+    | |-DeclRefExpr 0x73c1fc0 <col:4> 'int **' lvalue Var 0x73c1cf8 'b' 'int **'
+    | `-CStyleCastExpr 0x73c20b0 <col:8, col:36> 'int **' <BitCast>
+    |   `-CallExpr 0x73c2050 <col:16, col:36> 'void *'
+    |     |-ImplicitCastExpr 0x73c2038 <col:16> 'void *(*)(int)' <FunctionToPointerDecay>
+    |     | `-DeclRefExpr 0x73c1fe0 <col:16> 'void *(int)' Function 0x73c1770 'MALLOC' 'void *(int)'
+    |     `-ImplicitCastExpr 0x73c2078 <col:23, col:35> 'int' <IntegralCast>
+    |       `-UnaryExprOrTypeTraitExpr 0x73c2018 <col:23, col:35> 'unsigned long' sizeof 'int *'
+    |-BinaryOperator 0x73c2180 <line:13:4, col:9> 'int *' '='
+    | |-UnaryOperator 0x73c2130 <col:4, col:5> 'int *' lvalue prefix '*' cannot overflow
+    | | `-ImplicitCastExpr 0x73c2118 <col:5> 'int **' <LValueToRValue>
+    | |   `-DeclRefExpr 0x73c20f8 <col:5> 'int **' lvalue Var 0x73c1cf8 'b' 'int **'
+    | `-ImplicitCastExpr 0x73c2168 <col:9> 'int *' <LValueToRValue>
+    |   `-DeclRefExpr 0x73c2148 <col:9> 'int *' lvalue Var 0x73c1c30 'a' 'int *'
+    |-BinaryOperator 0x73c2210 <line:14:4, col:9> 'int' '='
+    | |-UnaryOperator 0x73c21d8 <col:4, col:5> 'int' lvalue prefix '*' cannot overflow
+    | | `-ImplicitCastExpr 0x73c21c0 <col:5> 'int *' <LValueToRValue>
+    | |   `-DeclRefExpr 0x73c21a0 <col:5> 'int *' lvalue Var 0x73c1c30 'a' 'int *'
+    | `-IntegerLiteral 0x73c21f0 <col:9> 'int' 10
+    |-BinaryOperator 0x73c2300 <line:15:4, col:13> 'int' '='
+    | |-UnaryOperator 0x73c22c8 <col:4, col:9> 'int' lvalue prefix '*' cannot overflow
+    | | `-ParenExpr 0x73c22a8 <col:5, col:9> 'int *'
+    | |   `-BinaryOperator 0x73c2288 <col:6, col:8> 'int *' '+'
+    | |     |-ImplicitCastExpr 0x73c2270 <col:6> 'int *' <LValueToRValue>
+    | |     | `-DeclRefExpr 0x73c2230 <col:6> 'int *' lvalue Var 0x73c1c30 'a' 'int *'
+    | |     `-IntegerLiteral 0x73c2250 <col:8> 'int' 1
+    | `-IntegerLiteral 0x73c22e0 <col:13> 'int' 20
+    |-BinaryOperator 0x73c23a8 <line:17:4, col:9> 'int *' '='
+    | |-DeclRefExpr 0x73c2320 <col:4> 'int *' lvalue Var 0x73c1d90 'c' 'int *'
+    | `-ImplicitCastExpr 0x73c2390 <col:8, col:9> 'int *' <LValueToRValue>
+    |   `-UnaryOperator 0x73c2378 <col:8, col:9> 'int *' lvalue prefix '*' cannot overflow
+    |     `-ImplicitCastExpr 0x73c2360 <col:9> 'int **' <LValueToRValue>
+    |       `-DeclRefExpr 0x73c2340 <col:9> 'int **' lvalue Var 0x73c1cf8 'b' 'int **'
+    |-CallExpr 0x73c2480 <line:18:4, col:12> 'void'
+    | |-ImplicitCastExpr 0x73c2468 <col:4> 'void (*)(int)' <FunctionToPointerDecay>
+    | | `-DeclRefExpr 0x73c23c8 <col:4> 'void (int)' Function 0x73c1a78 'PRINT' 'void (int)'
+    | `-ImplicitCastExpr 0x73c24a8 <col:10, col:11> 'int' <LValueToRValue>
+    |   `-UnaryOperator 0x73c2420 <col:10, col:11> 'int' lvalue prefix '*' cannot overflow
+    |     `-ImplicitCastExpr 0x73c2408 <col:11> 'int *' <LValueToRValue>
+    |       `-DeclRefExpr 0x73c23e8 <col:11> 'int *' lvalue Var 0x73c1d90 'c' 'int *'
+    |-CallExpr 0x73c3ab0 <line:19:4, col:16> 'void'
+    | |-ImplicitCastExpr 0x73c3a98 <col:4> 'void (*)(int)' <FunctionToPointerDecay>
+    | | `-DeclRefExpr 0x73c24c0 <col:4> 'void (int)' Function 0x73c1a78 'PRINT' 'void (int)'
+    | `-ImplicitCastExpr 0x73c3ad8 <col:10, col:15> 'int' <LValueToRValue>
+    |   `-UnaryOperator 0x73c3a80 <col:10, col:15> 'int' lvalue prefix '*' cannot overflow
+    |     `-ParenExpr 0x73c3a60 <col:11, col:15> 'int *'
+    |       `-BinaryOperator 0x73c3a40 <col:12, col:14> 'int *' '+'
+    |         |-ImplicitCastExpr 0x73c2520 <col:12> 'int *' <LValueToRValue>
+    |         | `-DeclRefExpr 0x73c24e0 <col:12> 'int *' lvalue Var 0x73c1d90 'c' 'int *'
+    |         `-IntegerLiteral 0x73c2500 <col:14> 'int' 1
+    |-CallExpr 0x73c3b70 <line:20:4, col:10> 'void'
+    | |-ImplicitCastExpr 0x73c3b58 <col:4> 'void (*)(void *)' <FunctionToPointerDecay>
+    | | `-DeclRefExpr 0x73c3af0 <col:4> 'void (void *)' Function 0x73c18f8 'FREE' 'void (void *)'
+    | `-ImplicitCastExpr 0x73c3bb0 <col:9> 'void *' <BitCast>
+    |   `-ImplicitCastExpr 0x73c3b98 <col:9> 'int *' <LValueToRValue>
+    |     `-DeclRefExpr 0x73c3b10 <col:9> 'int *' lvalue Var 0x73c1c30 'a' 'int *'
+    `-CallExpr 0x73c3c78 <line:21:4, col:17> 'void'
+      |-ImplicitCastExpr 0x73c3c60 <col:4> 'void (*)(void *)' <FunctionToPointerDecay>
+      | `-DeclRefExpr 0x73c3bc8 <col:4> 'void (void *)' Function 0x73c18f8 'FREE' 'void (void *)'
+      `-ImplicitCastExpr 0x73c3ca0 <col:9, col:16> 'void *' <BitCast>
+        `-CStyleCastExpr 0x73c3c38 <col:9, col:16> 'int *' <BitCast>
+          `-ImplicitCastExpr 0x73c3c20 <col:16> 'int **' <LValueToRValue> part_of_explicit_cast
+            `-DeclRefExpr 0x73c3be8 <col:16> 'int **' lvalue Var 0x73c1cf8 'b' 'int **'

@@ -1,0 +1,62 @@
+TranslationUnitDecl 0x7b139c8 <<invalid sloc>> <invalid sloc>
+|-TypedefDecl 0x7b14260 <<invalid sloc>> <invalid sloc> implicit __int128_t '__int128'
+| `-BuiltinType 0x7b13f60 '__int128'
+|-TypedefDecl 0x7b142d0 <<invalid sloc>> <invalid sloc> implicit __uint128_t 'unsigned __int128'
+| `-BuiltinType 0x7b13f80 'unsigned __int128'
+|-TypedefDecl 0x7b145d8 <<invalid sloc>> <invalid sloc> implicit __NSConstantString 'struct __NSConstantString_tag'
+| `-RecordType 0x7b143b0 'struct __NSConstantString_tag'
+|   `-Record 0x7b14328 '__NSConstantString_tag'
+|-TypedefDecl 0x7b14670 <<invalid sloc>> <invalid sloc> implicit __builtin_ms_va_list 'char *'
+| `-PointerType 0x7b14630 'char *'
+|   `-BuiltinType 0x7b13a60 'char'
+|-TypedefDecl 0x7b14968 <<invalid sloc>> <invalid sloc> implicit __builtin_va_list 'struct __va_list_tag [1]'
+| `-ConstantArrayType 0x7b14910 'struct __va_list_tag [1]' 1 
+|   `-RecordType 0x7b14750 'struct __va_list_tag'
+|     `-Record 0x7b146c8 '__va_list_tag'
+|-FunctionDecl 0x7b71410 <./test/test16.c:1:1, col:16> col:12 GET 'int ()' extern
+|-FunctionDecl 0x7b715e0 <line:2:1, col:25> col:15 MALLOC 'void *(int)' extern
+| `-ParmVarDecl 0x7b71510 <col:22> col:25 'int'
+|-FunctionDecl 0x7b71768 <line:3:1, col:24> col:13 FREE 'void (void *)' extern
+| `-ParmVarDecl 0x7b716a0 <col:18, col:23> col:24 'void *'
+|-FunctionDecl 0x7b718e8 <line:4:1, col:22> col:13 used PRINT 'void (int)' extern
+| `-ParmVarDecl 0x7b71828 <col:19> col:22 'int'
+|-FunctionDecl 0x7b71a70 <line:6:1, line:8:1> line:6:6 used x 'int (int)'
+| |-ParmVarDecl 0x7b719a8 <col:8, col:12> col:12 used y 'int'
+| `-CompoundStmt 0x7b71ba0 <col:15, line:8:1>
+|   `-ReturnStmt 0x7b71b90 <line:7:2, col:13>
+|     `-BinaryOperator 0x7b71b70 <col:9, col:13> 'int' '+'
+|       |-ImplicitCastExpr 0x7b71b58 <col:9> 'int' <LValueToRValue>
+|       | `-DeclRefExpr 0x7b71b18 <col:9> 'int' lvalue ParmVar 0x7b719a8 'y' 'int'
+|       `-IntegerLiteral 0x7b71b38 <col:13> 'int' 10
+|-FunctionDecl 0x7b71c68 <line:10:1, line:12:1> line:10:6 used f 'int (int)'
+| |-ParmVarDecl 0x7b71bd0 <col:8, col:12> col:12 used b 'int'
+| `-CompoundStmt 0x7b71e20 <col:15, line:12:1>
+|   `-ReturnStmt 0x7b71e10 <line:11:4, col:18>
+|     `-BinaryOperator 0x7b71df0 <col:11, col:18> 'int' '+'
+|       |-CallExpr 0x7b71d90 <col:11, col:14> 'int'
+|       | |-ImplicitCastExpr 0x7b71d78 <col:11> 'int (*)(int)' <FunctionToPointerDecay>
+|       | | `-DeclRefExpr 0x7b71d10 <col:11> 'int (int)' Function 0x7b71a70 'x' 'int (int)'
+|       | `-ImplicitCastExpr 0x7b71db8 <col:13> 'int' <LValueToRValue>
+|       |   `-DeclRefExpr 0x7b71d30 <col:13> 'int' lvalue ParmVar 0x7b71bd0 'b' 'int'
+|       `-IntegerLiteral 0x7b71dd0 <col:18> 'int' 10
+`-FunctionDecl 0x7b71e60 <line:14:1, line:21:1> line:14:5 main 'int ()'
+  `-CompoundStmt 0x7b721c0 <col:12, line:21:1>
+    |-DeclStmt 0x7b71f80 <line:15:4, col:9>
+    | `-VarDecl 0x7b71f18 <col:4, col:8> col:8 used a 'int'
+    |-BinaryOperator 0x7b71fd8 <line:16:4, col:8> 'int' '='
+    | |-DeclRefExpr 0x7b71f98 <col:4> 'int' lvalue Var 0x7b71f18 'a' 'int'
+    | `-IntegerLiteral 0x7b71fb8 <col:8> 'int' 10
+    |-BinaryOperator 0x7b720b0 <line:18:4, col:11> 'int' '='
+    | |-DeclRefExpr 0x7b71ff8 <col:4> 'int' lvalue Var 0x7b71f18 'a' 'int'
+    | `-CallExpr 0x7b72070 <col:8, col:11> 'int'
+    |   |-ImplicitCastExpr 0x7b72058 <col:8> 'int (*)(int)' <FunctionToPointerDecay>
+    |   | `-DeclRefExpr 0x7b72018 <col:8> 'int (int)' Function 0x7b71c68 'f' 'int (int)'
+    |   `-ImplicitCastExpr 0x7b72098 <col:10> 'int' <LValueToRValue>
+    |     `-DeclRefExpr 0x7b72038 <col:10> 'int' lvalue Var 0x7b71f18 'a' 'int'
+    |-CallExpr 0x7b72150 <line:19:4, col:11> 'void'
+    | |-ImplicitCastExpr 0x7b72138 <col:4> 'void (*)(int)' <FunctionToPointerDecay>
+    | | `-DeclRefExpr 0x7b720d0 <col:4> 'void (int)' Function 0x7b718e8 'PRINT' 'void (int)'
+    | `-ImplicitCastExpr 0x7b72178 <col:10> 'int' <LValueToRValue>
+    |   `-DeclRefExpr 0x7b720f0 <col:10> 'int' lvalue Var 0x7b71f18 'a' 'int'
+    `-ReturnStmt 0x7b721b0 <line:20:4, col:11>
+      `-IntegerLiteral 0x7b72190 <col:11> 'int' 0
