@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd build && make && cd ..
+cd build && cmake .. && make && cd ..
 
 ./build/ast-interpreter ./test/test00.c
 ./build/ast-interpreter ./test/test01.c
