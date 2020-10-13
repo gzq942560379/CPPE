@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/ast-interpreter",
-            "args": ["test/test19.c"],
+            "args": ["test/test20.c"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

@@ -3,6 +3,8 @@ extern void *MALLOC(int);
 extern void FREE(void *);
 extern void PRINT(int);
 
+// 动态指针数组
+
 int main()
 {
    int *a;

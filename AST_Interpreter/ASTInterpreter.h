@@ -20,6 +20,8 @@ public:
 
     virtual void VisitBinaryOperator(BinaryOperator *bop)
     {
+        if (mEnv->hasReturn())
+            return;
         VisitStmt(bop);
 
 #ifdef DEBUG
@@ -30,6 +32,8 @@ public:
     }
     virtual void VisitDeclRefExpr(DeclRefExpr *expr)
     {
+        if (mEnv->hasReturn())
+            return;
         VisitStmt(expr);
 
 #ifdef DEBUG
@@ -41,6 +45,8 @@ public:
     }
     virtual void VisitCastExpr(CastExpr *expr)
     {
+        if (mEnv->hasReturn())
+            return;
         VisitStmt(expr);
 #ifdef DEBUG
         expr->dumpColor();
@@ -51,6 +57,8 @@ public:
     }
     virtual void VisitCallExpr(CallExpr *call)
     {
+        if (mEnv->hasReturn())
+            return;
         VisitStmt(call);
 #ifdef DEBUG
         call->dumpColor();
@@ -61,6 +69,8 @@ public:
     }
     virtual void VisitDeclStmt(DeclStmt *declstmt)
     {
+        if (mEnv->hasReturn())
+            return;
 #ifdef DEBUG
         declstmt->dumpColor();
         llvm::errs() << "\n";
@@ -72,6 +82,8 @@ public:
     // added visitor --------------------------------------------------------------------
     virtual void VisitIntegerLiteral(IntegerLiteral *integer)
     {
+        if (mEnv->hasReturn())
+            return;
 #ifdef DEBUG
         integer->dumpColor();
         llvm::errs() << "\n";
@@ -81,11 +93,15 @@ public:
 
     virtual void VisitIfStmt(IfStmt *ifStmt)
     {
+        if (mEnv->hasReturn())
+            return;
         mEnv->ifStmt(ifStmt);
     }
 
     virtual void VisitReturnStmt(ReturnStmt *returnStmt)
     {
+        if (mEnv->hasReturn())
+            return;
         VisitStmt(returnStmt);
 #ifdef DEBUG
         returnStmt->dumpColor();
@@ -96,6 +112,8 @@ public:
 
     virtual void VisitUnaryOperator(UnaryOperator *unaryOperator)
     {
+        if (mEnv->hasReturn())
+            return;
         VisitStmt(unaryOperator);
 #ifdef DEBUG
         unaryOperator->dumpColor();
@@ -106,16 +124,22 @@ public:
 
     virtual void VisitWhileStmt(WhileStmt *whileStmt)
     {
+        if (mEnv->hasReturn())
+            return;
         mEnv->whileStmt(whileStmt);
     }
 
     virtual void VisitForStmt(ForStmt *forStmt)
     {
+        if (mEnv->hasReturn())
+            return;
         mEnv->forStmt(forStmt);
     }
 
     virtual void VisitArraySubscriptExpr(ArraySubscriptExpr *arraySubscriptExpr)
     {
+        if (mEnv->hasReturn())
+            return;
         VisitStmt(arraySubscriptExpr);
 #ifdef DEBUG
         arraySubscriptExpr->dumpColor();
@@ -126,6 +150,8 @@ public:
 
     virtual void VisitUnaryExprOrTypeTraitExpr(UnaryExprOrTypeTraitExpr *unaryExprOrTypeTraitExpr)
     {
+        if (mEnv->hasReturn())
+            return;
         VisitStmt(unaryExprOrTypeTraitExpr);
 #ifdef DEBUG
         unaryExprOrTypeTraitExpr->dumpColor();
@@ -136,6 +162,8 @@ public:
 
     virtual void VisitParenExpr(ParenExpr *parenExpr)
     {
+        if (mEnv->hasReturn())
+            return;
         VisitStmt(parenExpr);
 #ifdef DEBUG
         parenExpr->dumpColor();

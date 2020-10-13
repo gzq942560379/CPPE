@@ -14,6 +14,8 @@ using namespace clang;
 #include "StaticFrame.h"
 #include "Object.h"
 
+// #define DEBUG
+
 class InterpreterVisitor;
 
 class Environment
@@ -30,11 +32,14 @@ private:
 	FunctionDecl *mOutput;
 	FunctionDecl *mEntry; // main functions
 
+	bool _return = false;
+
 	// first search stack frame then search static frame
 	Object *searchDeclVal(Decl *decl);
 	void bindDeclToStack(Decl *decl, Object *val);
 	void bindDeclToStatic(Decl *decl, Object *val);
 
+	bool hasStmtVal(Stmt *stmt);
 	Object *getStmtVal(Stmt *stmt);
 	void bindStmtToStack(Stmt *stmt, Object *val);
 
@@ -46,6 +51,9 @@ public:
 	/// Initialize the Environment
 	void initAndRun(TranslationUnitDecl *unit, InterpreterVisitor *visitor);
 	FunctionDecl *getMainEntry();
+	bool hasReturn();
+	void setReturn();
+	void resetReturn();
 	void binop(BinaryOperator *bop);
 	void decl(DeclStmt *declstmt);
 	void declref(DeclRefExpr *declref);
