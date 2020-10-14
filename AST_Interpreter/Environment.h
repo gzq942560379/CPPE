@@ -32,8 +32,6 @@ private:
 	FunctionDecl *mOutput;
 	FunctionDecl *mEntry; // main functions
 
-	bool _return = false;
-
 	// first search stack frame then search static frame
 	Object *searchDeclVal(Decl *decl);
 	void bindDeclToStack(Decl *decl, Object *val);
@@ -48,12 +46,10 @@ private:
 public:
 	/// Get the declartions to the built-in functions
 	Environment();
+	bool hasReturn();
 	/// Initialize the Environment
 	void initAndRun(TranslationUnitDecl *unit, InterpreterVisitor *visitor);
 	FunctionDecl *getMainEntry();
-	bool hasReturn();
-	void setReturn();
-	void resetReturn();
 	void binop(BinaryOperator *bop);
 	void decl(DeclStmt *declstmt);
 	void declref(DeclRefExpr *declref);

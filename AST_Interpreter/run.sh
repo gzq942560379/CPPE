@@ -22,3 +22,8 @@ cd build && cmake .. && make && cd ..
 ./build/ast-interpreter ./test/test17.c
 ./build/ast-interpreter ./test/test18.c
 ./build/ast-interpreter ./test/test19.c
+./build/ast-interpreter ./test/test20.c
+./build/ast-interpreter ./test/test21.c
+./build/ast-interpreter ./test/test22.c
+./build/ast-interpreter ./test/test23.c
+./build/ast-interpreter ./test/test24.c

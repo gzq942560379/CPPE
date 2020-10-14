@@ -11,15 +11,7 @@ FunctionDecl *Environment::getMainEntry()
 }
 bool Environment::hasReturn()
 {
-    return _return;
-}
-void Environment::setReturn()
-{
-    _return = true;
-}
-void Environment::resetReturn()
-{
-    _return = false;
+    return mStack.back().hasReturn();
 }
 Object *Environment::searchDeclVal(Decl *decl)
 {
@@ -85,8 +77,18 @@ void Environment::startNewFrame(FunctionDecl *entry, Expr **args = nullptr)
                 else
                     assert(0);
             }
+            else if (const PointerType *pointerType = dyn_cast<PointerType>(type))
+            {
+                void *pointer = mStack[mStack.size() - 2].getStmtVal(args[pi - entry->param_begin()])->getPointer();
+                bindDeclToStack(paraVarDecl, new Object(pointer));
+            }
             else
+            {
+#ifdef DEBUG
+                type->dump();
+#endif
                 assert(0);
+            }
         }
         else
             assert(0);
@@ -485,7 +487,7 @@ void Environment::call(CallExpr *callexpr)
     {
         Expr *decl = callexpr->getArg(0);
         int32_t val = getStmtVal(decl)->getInt32();
-        llvm::errs() << val;
+        llvm::errs() << val << "\n";
     }
     else if (callee == mMalloc)
     {
@@ -505,23 +507,31 @@ void Environment::call(CallExpr *callexpr)
     {
         // create and visit function
         startNewFrame(callee, callexpr->getArgs());
-        resetReturn();
-        Object *obj = getStmtVal(callexpr);
+        Object *retVal = mStack.back().getReturn();
+        // delete frame
+        mStack.pop_back();
+        bindStmtToStack(callexpr, retVal);
+#ifdef DEBUG
         const Type *type = callexpr->getType().getTypePtr();
         if (const BuiltinType *builtinType = dyn_cast<BuiltinType>(type))
         {
             if (builtinType->getKind() == BuiltinType::Kind::Int)
             {
-#ifdef DEBUG
                 Object *debugObj = getStmtVal(callexpr);
                 llvm::errs() << "call return int : " << debugObj->getInt32() << "\n";
-#endif
+            }
+            else if (builtinType->getKind() == BuiltinType::Kind::Void)
+            {
+                // do nothing
             }
             else
                 assert(0);
         }
         else
+        {
             assert(0);
+        }
+#endif
     }
 }
 
@@ -559,8 +569,7 @@ void Environment::ifStmt(IfStmt *ifStmt)
 void Environment::returnStmt(ReturnStmt *returnStmt)
 {
     mStack.back().setPC(returnStmt);
-
-    setReturn();
+    Object *returnValue = nullptr;
 
     const Type *type = returnStmt->getRetValue()->getType().getTypePtr();
     if (const BuiltinType *builtinType = dyn_cast<BuiltinType>(type))
@@ -568,20 +577,19 @@ void Environment::returnStmt(ReturnStmt *returnStmt)
         if (builtinType->getKind() == BuiltinType::Kind::Int)
         {
             // get return value
-            int32_t returnValue = getStmtVal(returnStmt->getRetValue())->getInt32();
-            // delete frame
-            mStack.pop_back();
-            if (mStack.size() > 0)
-            {
-                // bind return value to Call Expr (PC)  except main
-                bindStmtToStack(mStack.back().getPC(), new Object(returnValue));
-            }
+            returnValue = new Object(getStmtVal(returnStmt->getRetValue())->getInt32());
         }
         else
             assert(0);
     }
     else
         assert(0);
+    // Void return
+    if (returnValue == nullptr)
+    {
+        returnValue = new Object();
+    }
+    mStack.back().setReturn(returnValue);
 }
 
 void Environment::unaryOperator(UnaryOperator *unaryOperator)

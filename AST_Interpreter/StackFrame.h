@@ -14,6 +14,9 @@ class StackFrame
 	/// The current stmt
 	Stmt *mPC;
 
+	bool _hasReturn = false;;
+	Object *_returnVal = nullptr;
+
 public:
 	StackFrame() : mVars(), mExprs(), mPC()
 	{
@@ -56,6 +59,16 @@ public:
 	Stmt *getPC()
 	{
 		return mPC;
+	}
+	bool hasReturn(){
+		return _hasReturn;
+	}
+	void setReturn(Object* returnVal){
+		this->_hasReturn = true;
+		this->_returnVal = returnVal;
+	}
+	Object* getReturn(){
+		return _returnVal;
 	}
 
 };

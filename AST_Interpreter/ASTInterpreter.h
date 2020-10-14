@@ -22,6 +22,7 @@ public:
     {
         if (mEnv->hasReturn())
             return;
+
         VisitStmt(bop);
 
 #ifdef DEBUG
