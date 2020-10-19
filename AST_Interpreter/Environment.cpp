@@ -487,7 +487,7 @@ void Environment::call(CallExpr *callexpr)
     {
         Expr *decl = callexpr->getArg(0);
         int32_t val = getStmtVal(decl)->getInt32();
-        llvm::errs() << val << "\n";
+        llvm::errs() << val;
     }
     else if (callee == mMalloc)
     {

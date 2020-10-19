@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 3.1.0)
 project(assign1)
 
-set(LLVM_DIR /usr/local/llvm10ra)
-
-set(CMAKE_CXX_FLAGS "-g")
-
 find_package(Clang REQUIRED CONFIG HINTS ${LLVM_DIR} ${LLVM_DIR}/lib/clang NO_DEFAULT_PATH)
 
 include_directories(${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS} SYSTEM)
