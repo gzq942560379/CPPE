@@ -19,3 +19,4 @@ cd ./build/ && make && cd ..
 ./build/llvmassignment test-bc/test13.bc
 ./build/llvmassignment test-bc/test14.bc
 ./build/llvmassignment test-bc/test15.bc
+./build/llvmassignment test-bc/test16.bc

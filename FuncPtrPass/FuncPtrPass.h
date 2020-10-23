@@ -137,8 +137,10 @@ struct FuncPtrPass : public ModulePass
       }
     }
 
-    // 从最后一个函数开始遍历CFG
-    TraverseFunc(*startFunc, new map<const Argument *, set<Function *> *>(), nullptr);
+    // 从每个函数开始遍历CFG
+    for (Function &f : M)
+      if (!f.getName().startswith("llvm.dbg.") && !f.isDeclaration())
+        TraverseFunc(f, new map<const Argument *, set<Function *> *>(), nullptr);
 
     output();
     return false;

@@ -41,17 +41,20 @@ void FuncPtrPass::ProcessCallbase(const CallBase *call, FunctionFrame &funcFrame
         {
             // 添加到output
             updateOutput(call->getDebugLoc().getLine(), f);
-
-            // 初始化参数
-            auto argsMap = initArgsMap(call, f, funcFrame);
-            // 处理函数
-            TraverseFunc(*f, argsMap, &funcFrame);
-            // 处理返回值
-            if (isFunctionPointer(call))
+            // 如果只有声明没有实现
+            if (!f->isDeclaration())
             {
-                assert(funcFrame.lastCallReturnVal != nullptr && "lastCallReturnVal should not be null !!!");
-                basicBlockframe.updateVarWithFunctionSet(call, funcFrame.lastCallReturnVal);
-                funcFrame.lastCallReturnVal = nullptr;
+                // 初始化参数
+                auto argsMap = initArgsMap(call, f, funcFrame);
+                // 处理函数
+                TraverseFunc(*f, argsMap, &funcFrame);
+                // 处理返回值
+                if (isFunctionPointer(call))
+                {
+                    assert(funcFrame.lastCallReturnVal != nullptr && "lastCallReturnVal should not be null !!!");
+                    basicBlockframe.updateVarWithFunctionSet(call, funcFrame.lastCallReturnVal);
+                    funcFrame.lastCallReturnVal = nullptr;
+                }
             }
         }
     }
@@ -183,8 +186,9 @@ set<Function *> *FuncPtrPass::getFunctionSetFromValue(Value *value, FunctionFram
         if (isa<Argument>(value))
         {
             auto arg = dyn_cast<Argument>(value);
-            assert(funcFrame.argsMap->find(arg) != funcFrame.argsMap->end() && "should find arg in argsMap!!!");
-            funcSet = funcFrame.argsMap->at(arg);
+            // 如果初始化过
+            if (funcFrame.argsMap->find(arg) != funcFrame.argsMap->end())
+                funcSet = funcFrame.argsMap->at(arg);
         }
         // 局部变量
         else
@@ -198,9 +202,13 @@ set<Function *> *FuncPtrPass::getFunctionSetFromValue(Value *value, FunctionFram
                 }
             }
         }
-        for (auto f : *funcSet)
+        // 没有找到
+        if (funcSet != nullptr)
         {
-            ret->insert(f);
+            for (auto f : *funcSet)
+            {
+                ret->insert(f);
+            }
         }
     }
     return ret;
