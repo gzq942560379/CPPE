@@ -1,64 +1,21 @@
 #include "FuncPtrPass.h"
+
 void FuncPtrPass::ProcessPHINode(const PHINode *phi, BasicBlock *from, FunctionFrame &funcFrame, BasicBlockFrame &basicBlockframe)
 {
-    string phiName = phi->getName();
+#ifdef DEBUG
     phi->dump();
-
+#endif
+    set<Function *> *funcSet = nullptr;
     if (from == nullptr)
     {
-        basicBlockframe.updateVar(phiName, nullptr);
-#ifdef DEBUG
-        errs() << phiName << " -> null\n";
-        return;
-#endif
-    }
-
-    Value *val = phi->getIncomingValueForBlock(from);
-    // 如果是函数 直接赋值
-    if (isa<Function>(val))
-    {
-        basicBlockframe.updateVar(phiName, dyn_cast<Function>(val));
-#ifdef DEBUG
-        errs() << phiName << " -> " << val->getName() << "\n";
-#endif
-    }
-    // 如果是函数指针 推测可能的函数集合
-    else if (val->getType()->isPointerTy() && val->getType()->getPointerElementType()->isFunctionTy())
-    {
-        // 空指针初始化 可能的函数集合为空集
-        if (isa<ConstantPointerNull>(val))
-        {
-            basicBlockframe.updateVar(phiName, nullptr);
-#ifdef DEBUG
-            errs() << phiName << " -> null\n";
-#endif
-        }
-        else
-        {
-            // 搜索函数指针可能的函数集合
-            set<Function *> *functions = searchVer(val, funcFrame);
-            if (functions->empty())
-            {
-                basicBlockframe.updateVar(phiName, nullptr);
-#ifdef DEBUG
-                errs() << phiName << " -> null\n";
-#endif
-            }
-            else
-            {
-                for (auto f : *functions)
-                {
-                    basicBlockframe.updateVar(phiName, f);
-#ifdef DEBUG
-                    errs() << phiName << " -> " << val->getName() << " -> " << f->getName() << "\n";
-#endif
-                }
-            }
-        }
+        funcSet = new set<Function *>();
     }
     else
     {
+        Value *val = phi->getIncomingValueForBlock(from);
+        funcSet = getFunctionSetFromValue(val, funcFrame);
     }
+    basicBlockframe.updateVarWithFunctionSet(phi, funcSet);
 }
 
 void FuncPtrPass::ProcessCallbase(const CallBase *call, FunctionFrame &funcFrame, BasicBlockFrame &basicBlockframe)
@@ -66,110 +23,69 @@ void FuncPtrPass::ProcessCallbase(const CallBase *call, FunctionFrame &funcFrame
     Value *calledOperand = call->getCalledOperand();
     if (calledOperand->getName().startswith("llvm.dbg."))
         return;
+#ifdef DEBUG
     call->dump();
-    // 如果是函数 直接递归调用
-    if (isa<Function>(calledOperand))
-    {
-        auto func = dyn_cast<Function>(calledOperand);
-        // 添加到output
-        updateOutput(call->getDebugLoc().getLine(), func);
-#ifdef DEBUG
-        errs()
-            << "direct Output : " << call->getDebugLoc().getLine() << " -> " << func->getName() << "\n";
 #endif
-        // 考虑传递参数 INIT argsMap
-        map<string, set<Function *>> *argsMap = new map<string, set<Function *>>();
-        for (unsigned int i = 0; i < call->getNumArgOperands(); i++)
-        {
-            Value *argOperand = call->getArgOperand(i);
-            string argOperandName = argOperand->getName();
-            string argNo = Twine(i).str();
-            // 只处理函数指针类型参数
-            // 函数 直接传递
-            if (isa<Function>(argOperand))
-            {
-                auto funcArgOperand = dyn_cast<Function>(argOperand);
-                argsMap->insert(std::make_pair(argNo, set<Function *>{funcArgOperand}));
-#ifdef DEBUG
-                errs() << "func args : " << func->getName() << ":" << argNo << " -> " << argOperandName << "\n";
-#endif
-            }
-            // 函数指针 推测所有可能值
-            else if (argOperand->getType()->isPointerTy() && argOperand->getType()->getPointerElementType()->isFunctionTy())
-            {
-                // ArgOperand 可能是 局部变量 也可能是函数参数
-                set<Function *> *functions = searchVer(argOperand, funcFrame);
+    set<Function *> *funcSet = getFunctionSetFromValue(calledOperand, funcFrame);
 
-                argsMap->insert(std::make_pair(argNo, set<Function *>()));
-                if (functions->empty())
-                {
-#ifdef DEBUG
-                    errs() << "func args : " << func->getName() << ":" << argNo << " -> " << argOperandName << " -> null \n";
-#endif
-                }
-                else
-                {
-                    for (auto f : *functions)
-                    {
-                        argsMap->at(argNo).insert(f);
-#ifdef DEBUG
-                        errs() << "func args : " << func->getName() << ":" << argNo << " -> " << argOperandName << " -> " << f->getName() << "\n";
-#endif
-                    }
-                }
-            }
-        }
-        // 处理函数
-        TraverseFunc(*func, argsMap);
-        // 处理返回值
-        // !TODO
-    }
-    // 如果是函数指针 则调用所有可能值
-    else if (calledOperand->getType()->isPointerTy() && calledOperand->getType()->getPointerElementType()->isFunctionTy())
+    if (funcSet->empty())
     {
-        // 获取函数指针可能的函数集合 局部变量 函数参数 全局变量
-        set<Function *> *functions = searchVer(calledOperand, funcFrame);
-
-        if (functions->empty())
-        {
 #ifdef DEBUG
-            errs() << "call null \n";
+        errs() << "call null \n";
 #endif
-        }
-        else
-        {
-            // 处理所有可能的函数
-            for (auto f : *functions)
-            {
-                // 添加到output
-                updateOutput(call->getDebugLoc().getLine(), f);
-#ifdef DEBUG
-                errs()
-                    << "Update Output : " << call->getDebugLoc().getLine() << " -> " << f->getName() << "\n";
-#endif
-                TraverseFunc(*f, new map<string, set<Function *>>());
-            }
-            // 如果返回值是函数指针 计算所有可能的函数指针
-        }
     }
     else
     {
-        llvm_unreachable("called should be function or function pointer!!!");
+        // 处理所有可能的函数
+        for (auto f : *funcSet)
+        {
+            // 添加到output
+            updateOutput(call->getDebugLoc().getLine(), f);
+
+            // 初始化参数
+            auto argsMap = initArgsMap(call, f, funcFrame);
+            // 处理函数
+            TraverseFunc(*f, argsMap, &funcFrame);
+            // 处理返回值
+            if (isFunctionPointer(call))
+            {
+                assert(funcFrame.lastCallReturnVal != nullptr && "lastCallReturnVal should not be null !!!");
+                basicBlockframe.updateVarWithFunctionSet(call, funcFrame.lastCallReturnVal);
+                funcFrame.lastCallReturnVal = nullptr;
+            }
+        }
     }
+    delete funcSet;
+}
+
+void FuncPtrPass::ProcessReturnInst(const ReturnInst *retInst, FunctionFrame &funcFrame)
+{
+#ifdef DEBUG
+    retInst->dump();
+#endif
+    auto retVal = retInst->getOperand(0);
+    auto funcSet = getFunctionSetFromValue(retVal, funcFrame);
+    funcFrame.returnVal(funcSet);
 }
 
 void FuncPtrPass::ProcessBasicBlock(BasicBlock &bb, BasicBlock *from, FunctionFrame &funcFrame, BasicBlockFrame &basicBlockframe)
 {
+#ifdef DEBUG
+    // bb.dump();
+#endif
     for (Instruction &inst : bb)
     {
         Type *type = inst.getType();
-        // 处理函数指针PHINode
-        if (isa<PHINode>(inst) && type->isPointerTy() && type->getPointerElementType()->isFunctionTy())
+        // 处理结果为函数指针PHINode
+        if (isa<PHINode>(inst) && isFunctionPointer(&inst))
             ProcessPHINode(dyn_cast<PHINode>(&inst), from, funcFrame, basicBlockframe);
-
+        // 处理所有函数调用CallBase
         if (isa<CallBase>(inst))
-        {
             ProcessCallbase(dyn_cast<CallBase>(&inst), funcFrame, basicBlockframe);
+        // 处理返回函数指针的ReturnInst
+        if (isa<ReturnInst>(inst) && inst.getNumOperands() > 0 && isFunctionPointer(inst.getOperand(0)))
+        {
+            auto retInst = dyn_cast<ReturnInst>(&inst);
         }
     }
 }
@@ -192,9 +108,9 @@ void FuncPtrPass::DeepFirstTraverseCFG(BasicBlock &bb, BasicBlock *from)
     delete basicBlockFrame;
 }
 
-void FuncPtrPass::TraverseFunc(Function &func, map<string, set<Function *>> *argsMap)
+void FuncPtrPass::TraverseFunc(Function &func, map<const Argument *, set<Function *> *> *argsMap, FunctionFrame *callerFrame)
 {
-    FunctionFrame *functionFrame = new FunctionFrame(&func, argsMap);
+    FunctionFrame *functionFrame = new FunctionFrame(&func, argsMap, callerFrame);
     funcStack.push_back(functionFrame);
     DeepFirstTraverseCFG(func.getBasicBlockList().front(), 0);
     funcStack.pop_back();
@@ -204,8 +120,12 @@ void FuncPtrPass::TraverseFunc(Function &func, map<string, set<Function *>> *arg
 void FuncPtrPass::updateOutput(int line, Function *func)
 {
     if (outputMap.find(line) == outputMap.end())
-        outputMap.insert(std::make_pair(line, set<Function *>()));
-    outputMap[line].insert(func);
+        outputMap.insert(std::make_pair(line, new set<Function *>()));
+    outputMap[line]->insert(func);
+#ifdef DEBUG
+    errs()
+        << "Update Output : " << line << " -> " << func->getName() << "\n";
+#endif
 }
 
 void FuncPtrPass::output() const
@@ -214,7 +134,7 @@ void FuncPtrPass::output() const
     {
         errs() << p.first << " : ";
         bool isFirst = true;
-        for (auto f : p.second)
+        for (auto f : *p.second)
         {
             if (isFirst)
             {
@@ -230,49 +150,96 @@ void FuncPtrPass::output() const
     }
 }
 
-set<Function *> *FuncPtrPass::searchVer(Value *val, FunctionFrame &funcFrame) const
+map<const Argument *, set<Function *> *> *FuncPtrPass::initArgsMap(const CallBase *call, const Function *func, FunctionFrame &callerFuncFrame)
 {
-    set<Function *> *functions = nullptr;
-    // 函数参数
-    if (isa<Argument>(val))
+    auto argsMap = new map<const Argument *, set<Function *> *>();
+    for (unsigned int i = 0; i < call->getNumArgOperands(); i++)
     {
-        auto arg = dyn_cast<Argument>(val);
-        string argNo = Twine(arg->getArgNo()).str();
-        int size = funcFrame.argsMap->size();
-        assert(funcFrame.argsMap->find(argNo) != funcFrame.argsMap->end() && "should find arg in argsMap!!!");
-        functions = &(funcFrame.argsMap->at(argNo));
+        Value *argOperand = call->getArgOperand(i);
+        // 只处理函数或函数指针
+        if (isa<Function>(argOperand) || FuncPtrPass::isFunctionPointer(argOperand))
+        {
+            auto funcSet = getFunctionSetFromValue(argOperand, callerFuncFrame);
+            argsMap->insert(std::make_pair(func->getArg(i), funcSet));
+        }
     }
-    // 局部变量
-    else
+    return argsMap;
+}
+
+set<Function *> *FuncPtrPass::getFunctionSetFromValue(Value *value, FunctionFrame &funcFrame)
+{
+    set<Function *> *ret = new set<Function *>();
+    // 如果是函数 直接赋值
+    if (isa<Function>(value))
     {
-        functions = funcFrame.searchVar(val->getName());
+        ret->insert(dyn_cast<Function>(value));
     }
-    return functions;
+    // 如果是函数指针 推测可能的函数集合
+    else if (FuncPtrPass::isFunctionPointer(value) && !isa<ConstantPointerNull>(value))
+    {
+        // 搜索函数指针可能的函数集合
+        set<Function *> *funcSet = nullptr;
+        // 函数参数
+        if (isa<Argument>(value))
+        {
+            auto arg = dyn_cast<Argument>(value);
+            assert(funcFrame.argsMap->find(arg) != funcFrame.argsMap->end() && "should find arg in argsMap!!!");
+            funcSet = funcFrame.argsMap->at(arg);
+        }
+        // 局部变量
+        else
+        {
+            for (auto it = funcFrame.bbStack.rbegin(); it != funcFrame.bbStack.rend(); it++)
+            {
+                BasicBlockFrame *bbFrame = *it;
+                if (bbFrame->varsMap.find(value) != bbFrame->varsMap.end())
+                {
+                    funcSet = bbFrame->varsMap[value];
+                }
+            }
+        }
+        for (auto f : *funcSet)
+        {
+            ret->insert(f);
+        }
+    }
+    return ret;
+}
+
+bool FuncPtrPass::isFunctionPointer(const Value *value)
+{
+    return value->getType()->isPointerTy() && value->getType()->getPointerElementType()->isFunctionTy();
 }
 
 char FuncPtrPass::ID = 0;
 static RegisterPass<FuncPtrPass> X("funcptrpass", "Print function call instruction");
 
-void BasicBlockFrame::updateVar(const string varName, Function *func)
+void BasicBlockFrame::updateVarWithFunctionSet(const Value *val, set<Function *> *funcSet)
 {
-    if (varsMap.find(varName) == varsMap.end())
-        varsMap.insert(std::make_pair(varName, set<Function *>()));
-    if (func != nullptr)
-        varsMap[varName].insert(func);
+    assert(funcSet != nullptr && "local variable function set is not null !!!");
+    varsMap.insert(std::make_pair(val, funcSet));
+#ifdef DEBUG
+    errs() << "Local Variable : " << val->getName() << " -> { ";
+    for (auto f : *funcSet)
+    {
+        errs() << f->getName() << ", ";
+    }
+    errs() << "}\n";
+#endif
 }
 
-set<Function *> *FunctionFrame::searchVar(string varName)
-{
-    // 从后往前在bbStack中搜索var
-    for (auto it = bbStack.rbegin(); it != bbStack.rend(); it++)
-    {
-        BasicBlockFrame *bbFrame = *it;
-        if (bbFrame->varsMap.find(varName) != bbFrame->varsMap.end())
-        {
-            return &bbFrame->varsMap[varName];
-        }
-    }
+int BasicBlockFrame::counter = 0;
 
-    llvm_unreachable(Twine("must find a var !!! -> " + varName).str().data());
-    return nullptr;
+void FunctionFrame::updateArgWithFunctionSet(const Argument *arg, set<Function *> *funcSet)
+{
+    assert(funcSet != nullptr && "args function set is not null !!!");
+    argsMap->insert(std::make_pair(arg, funcSet));
+#ifdef DEBUG
+    errs() << "Function Arg : " << arg->getArgNo() << " -> { ";
+    for (auto f : *funcSet)
+    {
+        errs() << f->getName() << ", ";
+    }
+    errs() << "}\n";
+#endif
 }
