@@ -60,13 +60,17 @@ public:
   map<const Argument *, set<Function *> *> *argsMap;
   FunctionFrame *callerFrame;
   set<Function *> *lastCallReturnVal = nullptr;
+  map<const BasicBlock *, int> colors;
   FunctionFrame(const Function *func, map<const Argument *, set<Function *> *> *argsMap, FunctionFrame *callerFrame) : func(func), argsMap(argsMap), callerFrame(callerFrame)
   {
     errs() << "construct FunctionFrame " << func->getName() << " ------------------------------------\n";
+    // 初始化颜色为-1
+    for (const BasicBlock &bb : *func)
+      colors[&bb] = -1;
   };
   ~FunctionFrame()
   {
-    errs() << "delete FunctionFrame " << func->getName() << " ------------------------------------\n";
+    errs() << "delete FunctionFrame " << func->getName() << " ---------------------------------------\n";
     for (auto p : *argsMap)
       delete p.second;
     delete argsMap;
@@ -136,7 +140,6 @@ struct FuncPtrPass : public ModulePass
         break;
       }
     }
-
     // 从每个函数开始遍历CFG
     for (Function &f : M)
       if (!f.getName().startswith("llvm.dbg.") && !f.isDeclaration())

@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/llvmassignment",
             "args": [
-                "test-bc/test18.bc"
+                "test-bc/test17.bc"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

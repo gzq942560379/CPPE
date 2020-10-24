@@ -95,9 +95,11 @@ void FuncPtrPass::ProcessBasicBlock(BasicBlock &bb, BasicBlock *from, FunctionFr
 
 void FuncPtrPass::DeepFirstTraverseCFG(BasicBlock &bb, BasicBlock *from)
 {
+    // 入栈的点染色 0
+    funcStack.back()->colors[&bb] = 0;
+
     BasicBlockFrame *basicBlockFrame = new BasicBlockFrame(&bb);
     funcStack.back()->bbStack.push_back(basicBlockFrame);
-
     // Process BB
     ProcessBasicBlock(bb, from, *funcStack.back(), *basicBlockFrame);
     // Deep first Traverse BB
@@ -105,10 +107,23 @@ void FuncPtrPass::DeepFirstTraverseCFG(BasicBlock &bb, BasicBlock *from)
     for (unsigned I = 0; I < TInst->getNumSuccessors(); ++I)
     {
         BasicBlock *Succ = TInst->getSuccessor(I);
-        DeepFirstTraverseCFG(*Succ, &bb);
+        if (funcStack.back()->colors[Succ] == -1 || funcStack.back()->colors[Succ] == 1) // 树边 、 前向边 或 横跨边 // 继续深度优先遍历
+        {
+            DeepFirstTraverseCFG(*Succ, &bb);
+        }
+        else if (funcStack.back()->colors[Succ] == 0) // 回边 // 退出访问
+        {
+            // do nothing
+        }
+        else
+        {
+            llvm_unreachable("color should be -1, 0, 1 !!!");
+        }
     }
     funcStack.back()->bbStack.pop_back();
     delete basicBlockFrame;
+    // 出栈的点染色 1
+    funcStack.back()->colors[&bb] = 1;
 }
 
 void FuncPtrPass::TraverseFunc(Function &func, map<const Argument *, set<Function *> *> *argsMap, FunctionFrame *callerFrame)
