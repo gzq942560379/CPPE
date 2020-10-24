@@ -32,7 +32,8 @@ class BasicBlockFrame
 
 public:
   const BasicBlock *bb;
-  map<const Value *, set<Function *> *> varsMap;
+  map<const Value *, set<const Function *> *> varsMap;
+  map<const CmpInst *, bool> condVerMap;
   BasicBlockFrame(const BasicBlock *bb) : bb(bb)
   {
 #ifdef DEBUG
@@ -49,7 +50,8 @@ public:
     for (auto p : varsMap)
       delete p.second;
   }
-  void updateVarWithFunctionSet(const Value *val, set<Function *> *funcSet);
+  void updateVarWithFunctionSet(const Value *val, set<const Function *> *funcSet);
+  void updateConditionValWithBool(const CmpInst *val, bool funcSet);
 };
 
 class FunctionFrame
@@ -57,11 +59,11 @@ class FunctionFrame
 public:
   vector<BasicBlockFrame *> bbStack;
   const Function *func;
-  map<const Argument *, set<Function *> *> *argsMap;
+  map<const Argument *, set<const Function *> *> *argsMap;
   FunctionFrame *callerFrame;
-  set<Function *> *lastCallReturnVal = nullptr;
+  set<const Function *> *lastCallReturnVal = nullptr;
   map<const BasicBlock *, int> colors;
-  FunctionFrame(const Function *func, map<const Argument *, set<Function *> *> *argsMap, FunctionFrame *callerFrame) : func(func), argsMap(argsMap), callerFrame(callerFrame)
+  FunctionFrame(const Function *func, map<const Argument *, set<const Function *> *> *argsMap, FunctionFrame *callerFrame) : func(func), argsMap(argsMap), callerFrame(callerFrame)
   {
 #ifdef DEBUG
     errs() << "construct FunctionFrame " << func->getName() << " ------------------------------------\n";
@@ -79,8 +81,8 @@ public:
       delete p.second;
     delete argsMap;
   };
-  void updateArgWithFunctionSet(const Argument *, set<Function *> *funcSet);
-  void returnVal(set<Function *> *funcSet)
+  void updateArgWithFunctionSet(const Argument *, set<const Function *> *funcSet);
+  void returnVal(set<const Function *> *funcSet)
   {
     assert(callerFrame != nullptr && "callerFrame should not be nullptr !!!");
     callerFrame->lastCallReturnVal = funcSet;
@@ -95,33 +97,37 @@ struct FuncPtrPass : public ModulePass
   static char ID; // Pass identification, replacement for typeid
   FuncPtrPass() : ModulePass(ID) {}
 
-  map<string, Function *> funcMap;
-  Function *startFunc;
-
   vector<FunctionFrame *> funcStack;
-  map<int, set<Function *> *> outputMap;
+  map<int, set<const Function *> *> outputMap;
 
   static bool isFunctionPointer(const Value *value);
 
-  void updateOutput(int line, Function *func);
+  void updateOutput(int line, const Function *func);
   void output() const;
 
   // 搜索变量的所有可能值 局部变量 函数参数 全局变量 创建新对象
-  set<Function *> *getFunctionSetFromValue(Value *value, FunctionFrame &funcFrame);
+  set<const Function *> *getFunctionSetFromValue(const Value *value, FunctionFrame &funcFrame);
+  // 搜索永真永假条件变量
+  bool hasBoolValueforCmpInst(const CmpInst *cmpInst, FunctionFrame &funcFrame);
+  // 获取永真永假条件变量
+  bool getBoolValueFromCmpInst(const CmpInst *cmpInst, FunctionFrame &funcFrame);
   // 考虑函数调用 函数指针参数传递 创建新对象
-  map<const Argument *, set<Function *> *> *initArgsMap(const CallBase *call, const Function *func, FunctionFrame &funcFrame);
+  map<const Argument *, set<const Function *> *> *initArgsMap(const CallBase *call, const Function *func, FunctionFrame &funcFrame);
   // 处理返回函数指针的ReturnInst
   void ProcessReturnInst(const ReturnInst *retInst, FunctionFrame &funcFrame);
+  void ProcessICmpInst(const ICmpInst *icmpInst, BasicBlockFrame &basicBlockframe);
   // 处理所有函数调用
   void ProcessCallbase(const CallBase *call, FunctionFrame &funcFrame, BasicBlockFrame &basicBlockframe);
   // 处理函数指针类型PHI指令
-  void ProcessPHINode(const PHINode *phi, BasicBlock *from, FunctionFrame &funcFrame, BasicBlockFrame &basicBlockframe);
+  void ProcessPHINode(const PHINode *phi, const BasicBlock *from, FunctionFrame &funcFrame, BasicBlockFrame &basicBlockframe);
+  // 处理Terminator,深度优先遍历BasicBlock 判断永真永假条件
+  void processTerminator(const Instruction *inst, const BasicBlock &bb);
   // 处理基本块
-  void ProcessBasicBlock(BasicBlock &bb, BasicBlock *from, FunctionFrame &funcFrame, BasicBlockFrame &basicBlockframe);
+  void ProcessBasicBlock(const BasicBlock &bb, const BasicBlock *from, FunctionFrame &funcFrame, BasicBlockFrame &basicBlockframe);
   // 深度优先遍历基本块
-  void DeepFirstTraverseCFG(BasicBlock &bb, BasicBlock *from);
+  void DeepFirstTraverseCFG(const BasicBlock &bb, const BasicBlock *from);
   // 遍历函数调用图
-  void TraverseFunc(Function &func, map<const Argument *, set<Function *> *> *argsMap, FunctionFrame *callerFrame);
+  void TraverseFunc(const Function &func, map<const Argument *, set<const Function *> *> *argsMap, FunctionFrame *callerFrame);
 
   bool runOnModule(Module &M) override
   {
@@ -131,23 +137,10 @@ struct FuncPtrPass : public ModulePass
     errs() << "Module end --------------------------------------------------------------------\n";
 #endif
 
-    // init funcMap
-    for (Function &f : M)
-      if (!f.getName().startswith("llvm.dbg."))
-        funcMap[f.getName()] = &f;
-    // find last function
-    for (auto fi = M.rbegin(); fi != M.rend(); ++fi)
-    {
-      if (!fi->getName().startswith("llvm.dbg."))
-      {
-        startFunc = &*fi;
-        break;
-      }
-    }
     // 从每个函数开始遍历CFG
     for (Function &f : M)
       if (!f.getName().startswith("llvm.dbg.") && !f.isDeclaration())
-        TraverseFunc(f, new map<const Argument *, set<Function *> *>(), nullptr);
+        TraverseFunc(f, new map<const Argument *, set<const Function *> *>(), nullptr);
 
     output();
     return false;

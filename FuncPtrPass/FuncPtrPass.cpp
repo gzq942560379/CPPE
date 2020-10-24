@@ -1,14 +1,14 @@
 #include "FuncPtrPass.h"
 
-void FuncPtrPass::ProcessPHINode(const PHINode *phi, BasicBlock *from, FunctionFrame &funcFrame, BasicBlockFrame &basicBlockframe)
+void FuncPtrPass::ProcessPHINode(const PHINode *phi, const BasicBlock *from, FunctionFrame &funcFrame, BasicBlockFrame &basicBlockframe)
 {
 #ifdef DEBUG
     phi->dump();
 #endif
-    set<Function *> *funcSet = nullptr;
+    set<const Function *> *funcSet = nullptr;
     if (from == nullptr)
     {
-        funcSet = new set<Function *>();
+        funcSet = new set<const Function *>();
     }
     else
     {
@@ -26,7 +26,7 @@ void FuncPtrPass::ProcessCallbase(const CallBase *call, FunctionFrame &funcFrame
 #ifdef DEBUG
     call->dump();
 #endif
-    set<Function *> *funcSet = getFunctionSetFromValue(calledOperand, funcFrame);
+    set<const Function *> *funcSet = getFunctionSetFromValue(calledOperand, funcFrame);
     if (funcSet->empty())
     {
 #ifdef DEBUG
@@ -60,22 +60,60 @@ void FuncPtrPass::ProcessCallbase(const CallBase *call, FunctionFrame &funcFrame
     delete funcSet;
 }
 
-void FuncPtrPass::ProcessReturnInst(const ReturnInst *retInst, FunctionFrame &funcFrame)
+void FuncPtrPass::ProcessReturnInst(const ReturnInst *reinst, FunctionFrame &funcFrame)
 {
 #ifdef DEBUG
-    retInst->dump();
+    reinst->dump();
 #endif
-    auto retVal = retInst->getOperand(0);
+    auto retVal = reinst->getOperand(0);
     auto funcSet = getFunctionSetFromValue(retVal, funcFrame);
     funcFrame.returnVal(funcSet);
 }
 
-void FuncPtrPass::ProcessBasicBlock(BasicBlock &bb, BasicBlock *from, FunctionFrame &funcFrame, BasicBlockFrame &basicBlockframe)
+void FuncPtrPass::ProcessICmpInst(const ICmpInst *icmpInst, BasicBlockFrame &basicBlockframe)
+{
+    auto predicate = icmpInst->getPredicate();
+    assert(icmpInst->getNumOperands() == 2 && "cmp instruction should have 2 operands !!!");
+    auto op1 = icmpInst->getOperand(0);
+    auto op2 = icmpInst->getOperand(1);
+    if (isa<ConstantInt>(op1) && isa<ConstantInt>(op2))
+    {
+#ifdef DEBUG
+        icmpInst->dump();
+#endif
+        auto constant1 = dyn_cast<ConstantInt>(op1);
+        auto constant2 = dyn_cast<ConstantInt>(op2);
+        if (predicate == ICmpInst::ICMP_EQ)
+            basicBlockframe.updateConditionValWithBool(icmpInst, constant1->getSExtValue() == constant2->getSExtValue());
+        else if (predicate == ICmpInst::ICMP_NE)
+            basicBlockframe.updateConditionValWithBool(icmpInst, constant1->getSExtValue() != constant2->getSExtValue());
+        else if (predicate == ICmpInst::ICMP_SGT)
+            basicBlockframe.updateConditionValWithBool(icmpInst, constant1->getSExtValue() > constant2->getSExtValue());
+        else if (predicate == ICmpInst::ICMP_SLT)
+            basicBlockframe.updateConditionValWithBool(icmpInst, constant1->getSExtValue() < constant2->getSExtValue());
+        else if (predicate == ICmpInst::ICMP_SGE)
+            basicBlockframe.updateConditionValWithBool(icmpInst, constant1->getSExtValue() >= constant2->getSExtValue());
+        else if (predicate == ICmpInst::ICMP_SLE)
+            basicBlockframe.updateConditionValWithBool(icmpInst, constant1->getSExtValue() <= constant2->getSExtValue());
+        else if (predicate == ICmpInst::ICMP_UGT)
+            basicBlockframe.updateConditionValWithBool(icmpInst, constant1->getZExtValue() > constant2->getZExtValue());
+        else if (predicate == ICmpInst::ICMP_ULT)
+            basicBlockframe.updateConditionValWithBool(icmpInst, constant1->getZExtValue() < constant2->getZExtValue());
+        else if (predicate == ICmpInst::ICMP_UGE)
+            basicBlockframe.updateConditionValWithBool(icmpInst, constant1->getZExtValue() >= constant2->getZExtValue());
+        else if (predicate == ICmpInst::ICMP_ULE)
+            basicBlockframe.updateConditionValWithBool(icmpInst, constant1->getZExtValue() <= constant2->getZExtValue());
+        else
+            llvm_unreachable("no possible to here !!!");
+    }
+}
+
+void FuncPtrPass::ProcessBasicBlock(const BasicBlock &bb, const BasicBlock *from, FunctionFrame &funcFrame, BasicBlockFrame &basicBlockframe)
 {
 #ifdef DEBUG
     // bb.dump();
 #endif
-    for (Instruction &inst : bb)
+    for (auto &inst : bb)
     {
         Type *type = inst.getType();
         // 处理结果为函数指针PHINode
@@ -87,43 +125,69 @@ void FuncPtrPass::ProcessBasicBlock(BasicBlock &bb, BasicBlock *from, FunctionFr
         // 处理返回函数指针的ReturnInst
         if (isa<ReturnInst>(inst) && inst.getNumOperands() > 0 && isFunctionPointer(inst.getOperand(0)) && funcFrame.callerFrame != nullptr)
             ProcessReturnInst(dyn_cast<ReturnInst>(&inst), funcFrame);
+        // 处理永真永假条件判断
+        if (isa<ICmpInst>(inst))
+            ProcessICmpInst(dyn_cast<ICmpInst>(&inst), basicBlockframe);
     }
 }
 
-void FuncPtrPass::DeepFirstTraverseCFG(BasicBlock &bb, BasicBlock *from)
+void FuncPtrPass::processTerminator(const Instruction *inst, const BasicBlock &bb)
+{
+    // 如果是BranchInst 且条件变量永真或永假 遍历对应分支
+    if (isa<BranchInst>(inst) && inst->getNumSuccessors() > 1 && hasBoolValueforCmpInst(dyn_cast<CmpInst>(dyn_cast<BranchInst>(inst)->getCondition()), *funcStack.back()))
+    {
+        auto boolVal = getBoolValueFromCmpInst(dyn_cast<CmpInst>(dyn_cast<BranchInst>(inst)->getCondition()), *funcStack.back());
+#ifdef DEBUG
+        inst->dump();
+        errs() << "Condition Always " << (boolVal ? "true" : "false") << "\n";
+#endif
+        auto nextBasicBlock = inst->getSuccessor(boolVal ? 0 : 1);
+        if (funcStack.back()->colors[nextBasicBlock] == -1 || funcStack.back()->colors[nextBasicBlock] == 1) // 树边 、 前向边 或 横跨边 // 继续深度优先遍历
+            DeepFirstTraverseCFG(*nextBasicBlock, &bb);
+        else if (funcStack.back()->colors[nextBasicBlock] == 0) // 回边 //退出深度优先遍历
+            ;                                                   // do nothing
+        else
+            llvm_unreachable("color should be -1, 0, 1 !!!");
+    }
+    // 否则遍历所有分支
+    else
+    {
+        for (unsigned I = 0; I < inst->getNumSuccessors(); ++I)
+        {
+            auto nextBasicBlock = inst->getSuccessor(I);
+            if (funcStack.back()->colors[nextBasicBlock] == -1 || funcStack.back()->colors[nextBasicBlock] == 1) // 树边 、 前向边 或 横跨边 // 继续深度优先遍历
+                DeepFirstTraverseCFG(*nextBasicBlock, &bb);
+            else if (funcStack.back()->colors[nextBasicBlock] == 0) // 回边 //退出深度优先遍历
+                ;                                                   // do nothing
+            else
+                llvm_unreachable("color should be -1, 0, 1 !!!");
+        }
+    }
+}
+
+void FuncPtrPass::DeepFirstTraverseCFG(const BasicBlock &bb, const BasicBlock *from)
 {
     // 入栈的点染色 0
     funcStack.back()->colors[&bb] = 0;
-
+    // 创建新的BasicBlockFrame
     BasicBlockFrame *basicBlockFrame = new BasicBlockFrame(&bb);
+    // 入栈
     funcStack.back()->bbStack.push_back(basicBlockFrame);
+
     // Process BB
     ProcessBasicBlock(bb, from, *funcStack.back(), *basicBlockFrame);
-    // Deep first Traverse BB
-    auto TInst = bb.getTerminator();
-    for (unsigned I = 0; I < TInst->getNumSuccessors(); ++I)
-    {
-        BasicBlock *Succ = TInst->getSuccessor(I);
-        if (funcStack.back()->colors[Succ] == -1 || funcStack.back()->colors[Succ] == 1) // 树边 、 前向边 或 横跨边 // 继续深度优先遍历
-        {
-            DeepFirstTraverseCFG(*Succ, &bb);
-        }
-        else if (funcStack.back()->colors[Succ] == 0) // 回边 // 退出访问
-        {
-            // do nothing
-        }
-        else
-        {
-            llvm_unreachable("color should be -1, 0, 1 !!!");
-        }
-    }
+    // 处理Terminator,深度优先遍历BasicBlock
+    processTerminator(bb.getTerminator(), bb);
+
+    // 出栈
     funcStack.back()->bbStack.pop_back();
+    // 销毁新的BasicBlockFrame
     delete basicBlockFrame;
     // 出栈的点染色 1
     funcStack.back()->colors[&bb] = 1;
 }
 
-void FuncPtrPass::TraverseFunc(Function &func, map<const Argument *, set<Function *> *> *argsMap, FunctionFrame *callerFrame)
+void FuncPtrPass::TraverseFunc(const Function &func, map<const Argument *, set<const Function *> *> *argsMap, FunctionFrame *callerFrame)
 {
     FunctionFrame *functionFrame = new FunctionFrame(&func, argsMap, callerFrame);
     funcStack.push_back(functionFrame);
@@ -132,10 +196,10 @@ void FuncPtrPass::TraverseFunc(Function &func, map<const Argument *, set<Functio
     delete functionFrame;
 }
 
-void FuncPtrPass::updateOutput(int line, Function *func)
+void FuncPtrPass::updateOutput(int line, const Function *func)
 {
     if (outputMap.find(line) == outputMap.end())
-        outputMap.insert(std::make_pair(line, new set<Function *>()));
+        outputMap.insert(std::make_pair(line, new set<const Function *>()));
     outputMap[line]->insert(func);
 #ifdef DEBUG
     errs()
@@ -165,9 +229,9 @@ void FuncPtrPass::output() const
     }
 }
 
-map<const Argument *, set<Function *> *> *FuncPtrPass::initArgsMap(const CallBase *call, const Function *func, FunctionFrame &callerFuncFrame)
+map<const Argument *, set<const Function *> *> *FuncPtrPass::initArgsMap(const CallBase *call, const Function *func, FunctionFrame &callerFuncFrame)
 {
-    auto argsMap = new map<const Argument *, set<Function *> *>();
+    auto argsMap = new map<const Argument *, set<const Function *> *>();
     for (unsigned int i = 0; i < call->getNumArgOperands(); i++)
     {
         Value *argOperand = call->getArgOperand(i);
@@ -181,9 +245,9 @@ map<const Argument *, set<Function *> *> *FuncPtrPass::initArgsMap(const CallBas
     return argsMap;
 }
 
-set<Function *> *FuncPtrPass::getFunctionSetFromValue(Value *value, FunctionFrame &funcFrame)
+set<const Function *> *FuncPtrPass::getFunctionSetFromValue(const Value *value, FunctionFrame &funcFrame)
 {
-    set<Function *> *ret = new set<Function *>();
+    set<const Function *> *ret = new set<const Function *>();
     // 如果是函数 直接赋值
     if (isa<Function>(value))
     {
@@ -193,7 +257,7 @@ set<Function *> *FuncPtrPass::getFunctionSetFromValue(Value *value, FunctionFram
     else if (FuncPtrPass::isFunctionPointer(value) && !isa<ConstantPointerNull>(value))
     {
         // 搜索函数指针可能的函数集合
-        set<Function *> *funcSet = nullptr;
+        set<const Function *> *funcSet = nullptr;
         // 函数参数
         if (isa<Argument>(value))
         {
@@ -226,6 +290,33 @@ set<Function *> *FuncPtrPass::getFunctionSetFromValue(Value *value, FunctionFram
     return ret;
 }
 
+bool FuncPtrPass::hasBoolValueforCmpInst(const CmpInst *cmpInst, FunctionFrame &funcFrame)
+{
+    for (auto it = funcFrame.bbStack.rbegin(); it != funcFrame.bbStack.rend(); it++)
+    {
+        auto bbFrame = *it;
+        if (bbFrame->condVerMap.find(cmpInst) != bbFrame->condVerMap.end())
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool FuncPtrPass::getBoolValueFromCmpInst(const CmpInst *cmpInst, FunctionFrame &funcFrame)
+{
+    assert(hasBoolValueforCmpInst(cmpInst, funcFrame) && "should have bool value for the cmp instruct !!!");
+    for (auto it = funcFrame.bbStack.rbegin(); it != funcFrame.bbStack.rend(); it++)
+    {
+        BasicBlockFrame *bbFrame = *it;
+        if (bbFrame->condVerMap.find(cmpInst) != bbFrame->condVerMap.end())
+        {
+            return bbFrame->condVerMap[cmpInst];
+        }
+    }
+    llvm_unreachable("no possible to here !!!");
+}
+
 bool FuncPtrPass::isFunctionPointer(const Value *value)
 {
     return value->getType()->isPointerTy() && value->getType()->getPointerElementType()->isFunctionTy();
@@ -234,7 +325,7 @@ bool FuncPtrPass::isFunctionPointer(const Value *value)
 char FuncPtrPass::ID = 0;
 static RegisterPass<FuncPtrPass> X("funcptrpass", "Print function call instruction");
 
-void BasicBlockFrame::updateVarWithFunctionSet(const Value *val, set<Function *> *funcSet)
+void BasicBlockFrame::updateVarWithFunctionSet(const Value *val, set<const Function *> *funcSet)
 {
     assert(funcSet != nullptr && "local variable function set is not null !!!");
     varsMap.insert(std::make_pair(val, funcSet));
@@ -248,11 +339,19 @@ void BasicBlockFrame::updateVarWithFunctionSet(const Value *val, set<Function *>
 #endif
 }
 
+void BasicBlockFrame::updateConditionValWithBool(const CmpInst *cmpInst, bool boolVal)
+{
+    condVerMap.insert(std::make_pair(cmpInst, boolVal));
+#ifdef DEBUG
+    errs() << "Local Condition Variable : " << cmpInst->getName() << " -> " << (boolVal ? "true" : "false") << "\n";
+#endif
+}
+
 #ifdef DEBUG
 int BasicBlockFrame::counter = 0;
 #endif
 
-void FunctionFrame::updateArgWithFunctionSet(const Argument *arg, set<Function *> *funcSet)
+void FunctionFrame::updateArgWithFunctionSet(const Argument *arg, set<const Function *> *funcSet)
 {
     assert(funcSet != nullptr && "args function set is not null !!!");
     argsMap->insert(std::make_pair(arg, funcSet));
