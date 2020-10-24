@@ -27,7 +27,6 @@ void FuncPtrPass::ProcessCallbase(const CallBase *call, FunctionFrame &funcFrame
     call->dump();
 #endif
     set<Function *> *funcSet = getFunctionSetFromValue(calledOperand, funcFrame);
-
     if (funcSet->empty())
     {
 #ifdef DEBUG
@@ -86,10 +85,8 @@ void FuncPtrPass::ProcessBasicBlock(BasicBlock &bb, BasicBlock *from, FunctionFr
         if (isa<CallBase>(inst))
             ProcessCallbase(dyn_cast<CallBase>(&inst), funcFrame, basicBlockframe);
         // 处理返回函数指针的ReturnInst
-        if (isa<ReturnInst>(inst) && inst.getNumOperands() > 0 && isFunctionPointer(inst.getOperand(0)))
-        {
-            auto retInst = dyn_cast<ReturnInst>(&inst);
-        }
+        if (isa<ReturnInst>(inst) && inst.getNumOperands() > 0 && isFunctionPointer(inst.getOperand(0)) && funcFrame.callerFrame != nullptr)
+            ProcessReturnInst(dyn_cast<ReturnInst>(&inst), funcFrame);
     }
 }
 
@@ -251,7 +248,9 @@ void BasicBlockFrame::updateVarWithFunctionSet(const Value *val, set<Function *>
 #endif
 }
 
+#ifdef DEBUG
 int BasicBlockFrame::counter = 0;
+#endif
 
 void FunctionFrame::updateArgWithFunctionSet(const Argument *arg, set<Function *> *funcSet)
 {

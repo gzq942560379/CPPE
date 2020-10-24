@@ -22,7 +22,7 @@ using std::string;
 using std::tuple;
 using std::vector;
 
-#define DEBUG
+// #define DEBUG
 
 class BasicBlockFrame
 {
@@ -63,14 +63,18 @@ public:
   map<const BasicBlock *, int> colors;
   FunctionFrame(const Function *func, map<const Argument *, set<Function *> *> *argsMap, FunctionFrame *callerFrame) : func(func), argsMap(argsMap), callerFrame(callerFrame)
   {
+#ifdef DEBUG
     errs() << "construct FunctionFrame " << func->getName() << " ------------------------------------\n";
+#endif
     // 初始化颜色为-1
     for (const BasicBlock &bb : *func)
       colors[&bb] = -1;
   };
   ~FunctionFrame()
   {
+#ifdef DEBUG
     errs() << "delete FunctionFrame " << func->getName() << " ---------------------------------------\n";
+#endif
     for (auto p : *argsMap)
       delete p.second;
     delete argsMap;
