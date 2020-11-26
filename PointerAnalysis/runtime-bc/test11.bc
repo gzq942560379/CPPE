@@ -1,0 +1,60 @@
+; Function Attrs: noinline nounwind uwtable
+define dso_local i32 @plus(i32 %0, i32 %1) #0 !dbg !13 {
+  call void @llvm.dbg.value(metadata i32 %0, metadata !15, metadata !DIExpression()), !dbg !16
+  call void @llvm.dbg.value(metadata i32 %1, metadata !17, metadata !DIExpression()), !dbg !16
+  %3 = add nsw i32 %0, %1, !dbg !18
+  ret i32 %3, !dbg !19
+}
+
+; Function Attrs: noinline nounwind uwtable
+define dso_local i32 @minus(i32 %0, i32 %1) #0 !dbg !20 {
+  call void @llvm.dbg.value(metadata i32 %0, metadata !21, metadata !DIExpression()), !dbg !22
+  call void @llvm.dbg.value(metadata i32 %1, metadata !23, metadata !DIExpression()), !dbg !22
+  %3 = sub nsw i32 %0, %1, !dbg !24
+  ret i32 %3, !dbg !25
+}
+
+; Function Attrs: noinline nounwind uwtable
+define dso_local i32 @clever(i32 %0, i32 %1, i32 (i32, i32)* %2) #0 !dbg !26 {
+  call void @llvm.dbg.value(metadata i32 %0, metadata !29, metadata !DIExpression()), !dbg !30
+  call void @llvm.dbg.value(metadata i32 %1, metadata !31, metadata !DIExpression()), !dbg !30
+  call void @llvm.dbg.value(metadata i32 (i32, i32)* %2, metadata !32, metadata !DIExpression()), !dbg !30
+  %4 = call i32 %2(i32 %0, i32 %1), !dbg !33
+  ret i32 %4, !dbg !34
+}
+
+; Function Attrs: noinline nounwind uwtable
+define dso_local i32 @moo(i8 signext %0, i32 %1, i32 %2) #0 !dbg !35 {
+  call void @llvm.dbg.value(metadata i8 %0, metadata !39, metadata !DIExpression()), !dbg !40
+  call void @llvm.dbg.value(metadata i32 %1, metadata !41, metadata !DIExpression()), !dbg !40
+  call void @llvm.dbg.value(metadata i32 %2, metadata !42, metadata !DIExpression()), !dbg !40
+  call void @llvm.dbg.value(metadata i32 (i32, i32)* @plus, metadata !43, metadata !DIExpression()), !dbg !40
+  call void @llvm.dbg.value(metadata i32 (i32, i32)* @minus, metadata !44, metadata !DIExpression()), !dbg !40
+  %4 = call noalias i8* @malloc(i64 8) #3, !dbg !45
+  %5 = bitcast i8* %4 to i32 (i32, i32)**, !dbg !46
+  call void @llvm.dbg.value(metadata i32 (i32, i32)** %5, metadata !47, metadata !DIExpression()), !dbg !40
+  %6 = sext i8 %0 to i32, !dbg !48
+  %7 = icmp eq i32 %6, 43, !dbg !50
+  br i1 %7, label %8, label %9, !dbg !51
+
+8:                                                ; preds = %3
+  store i32 (i32, i32)* @plus, i32 (i32, i32)** %5, align 8, !dbg !52
+  br label %9, !dbg !54
+
+9:                                                ; preds = %8, %3
+  %10 = sext i8 %0 to i32, !dbg !55
+  %11 = icmp eq i32 %10, 45, !dbg !57
+  br i1 %11, label %12, label %13, !dbg !58
+
+12:                                               ; preds = %9
+  store i32 (i32, i32)* @minus, i32 (i32, i32)** %5, align 8, !dbg !59
+  br label %13, !dbg !61
+
+13:                                               ; preds = %12, %9
+  %14 = load i32 (i32, i32)*, i32 (i32, i32)** %5, align 8, !dbg !62
+  %15 = call i32 @clever(i32 %1, i32 %2, i32 (i32, i32)* %14), !dbg !63
+  call void @llvm.dbg.value(metadata i32 %15, metadata !64, metadata !DIExpression()), !dbg !40
+  ret i32 0, !dbg !66
+}
+
+sh: 1: pause: not found

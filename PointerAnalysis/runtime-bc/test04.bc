@@ -1,0 +1,73 @@
+; Function Attrs: noinline nounwind uwtable
+define dso_local i32 @plus(i32 %0, i32 %1) #0 !dbg !9 {
+  call void @llvm.dbg.value(metadata i32 %0, metadata !14, metadata !DIExpression()), !dbg !15
+  call void @llvm.dbg.value(metadata i32 %1, metadata !16, metadata !DIExpression()), !dbg !15
+  %3 = add nsw i32 %0, %1, !dbg !17
+  ret i32 %3, !dbg !18
+}
+
+; Function Attrs: noinline nounwind uwtable
+define dso_local i32 @minus(i32 %0, i32 %1) #0 !dbg !19 {
+  call void @llvm.dbg.value(metadata i32 %0, metadata !20, metadata !DIExpression()), !dbg !21
+  call void @llvm.dbg.value(metadata i32 %1, metadata !22, metadata !DIExpression()), !dbg !21
+  %3 = sub nsw i32 %0, %1, !dbg !23
+  ret i32 %3, !dbg !24
+}
+
+; Function Attrs: noinline nounwind uwtable
+define dso_local i32 @foo(i32 %0, i32 %1, i32 (i32, i32)* %2) #0 !dbg !25 {
+  call void @llvm.dbg.value(metadata i32 %0, metadata !29, metadata !DIExpression()), !dbg !30
+  call void @llvm.dbg.value(metadata i32 %1, metadata !31, metadata !DIExpression()), !dbg !30
+  call void @llvm.dbg.value(metadata i32 (i32, i32)* %2, metadata !32, metadata !DIExpression()), !dbg !30
+  %4 = call i32 %2(i32 %0, i32 %1), !dbg !33
+  ret i32 %4, !dbg !34
+}
+
+; Function Attrs: noinline nounwind uwtable
+define dso_local i32 @clever(i32 %0) #0 !dbg !35 {
+  call void @llvm.dbg.value(metadata i32 %0, metadata !38, metadata !DIExpression()), !dbg !39
+  call void @llvm.dbg.value(metadata i32 (i32, i32)* @plus, metadata !40, metadata !DIExpression()), !dbg !39
+  call void @llvm.dbg.value(metadata i32 (i32, i32)* @minus, metadata !41, metadata !DIExpression()), !dbg !39
+  call void @llvm.dbg.value(metadata i32 (i32, i32)* null, metadata !42, metadata !DIExpression()), !dbg !39
+  call void @llvm.dbg.value(metadata i32 (i32, i32)* null, metadata !43, metadata !DIExpression()), !dbg !39
+  call void @llvm.dbg.value(metadata i32 (i32, i32)* null, metadata !44, metadata !DIExpression()), !dbg !39
+  call void @llvm.dbg.value(metadata i32 (i32, i32, i32 (i32, i32)*)* @foo, metadata !45, metadata !DIExpression()), !dbg !39
+  call void @llvm.dbg.value(metadata i32 1, metadata !47, metadata !DIExpression()), !dbg !39
+  call void @llvm.dbg.value(metadata i32 2, metadata !48, metadata !DIExpression()), !dbg !39
+  %2 = icmp sge i32 %0, 4, !dbg !49
+  br i1 %2, label %3, label %4, !dbg !51
+
+3:                                                ; preds = %1
+  call void @llvm.dbg.value(metadata i32 (i32, i32)* @minus, metadata !42, metadata !DIExpression()), !dbg !39
+  br label %4, !dbg !52
+
+4:                                                ; preds = %3, %1
+  %.01 = phi i32 (i32, i32)* [ @minus, %3 ], [ null, %1 ], !dbg !39
+  call void @llvm.dbg.value(metadata i32 (i32, i32)* %.01, metadata !42, metadata !DIExpression()), !dbg !39
+  %5 = call i32 @foo(i32 1, i32 2, i32 (i32, i32)* %.01), !dbg !54
+  %6 = icmp sge i32 %0, 5, !dbg !55
+  br i1 %6, label %7, label %8, !dbg !57
+
+7:                                                ; preds = %4
+  call void @llvm.dbg.value(metadata i32 (i32, i32)* @plus, metadata !42, metadata !DIExpression()), !dbg !39
+  call void @llvm.dbg.value(metadata i32 (i32, i32)* @plus, metadata !43, metadata !DIExpression()), !dbg !39
+  br label %8, !dbg !58
+
+8:                                                ; preds = %7, %4
+  %.1 = phi i32 (i32, i32)* [ @plus, %7 ], [ %.01, %4 ], !dbg !39
+  %.0 = phi i32 (i32, i32)* [ @plus, %7 ], [ null, %4 ], !dbg !39
+  call void @llvm.dbg.value(metadata i32 (i32, i32)* %.0, metadata !43, metadata !DIExpression()), !dbg !39
+  call void @llvm.dbg.value(metadata i32 (i32, i32)* %.1, metadata !42, metadata !DIExpression()), !dbg !39
+  %9 = icmp ne i32 (i32, i32)* %.1, null, !dbg !60
+  br i1 %9, label %10, label %12, !dbg !62
+
+10:                                               ; preds = %8
+  %11 = call i32 @foo(i32 1, i32 2, i32 (i32, i32)* %.0), !dbg !63
+  call void @llvm.dbg.value(metadata i32 %11, metadata !65, metadata !DIExpression()), !dbg !67
+  br label %12, !dbg !68
+
+12:                                               ; preds = %10, %8
+  ret i32 0, !dbg !69
+}
+
+sh: 1: pause: not found

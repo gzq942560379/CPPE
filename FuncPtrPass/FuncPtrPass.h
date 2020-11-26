@@ -115,6 +115,7 @@ struct FuncPtrPass : public ModulePass
   map<const Argument *, set<const Function *> *> *initArgsMap(const CallBase *call, const Function *func, FunctionFrame &funcFrame);
   // 处理返回函数指针的ReturnInst
   void ProcessReturnInst(const ReturnInst *retInst, FunctionFrame &funcFrame);
+  // 处理所有整数比较指令
   void ProcessICmpInst(const ICmpInst *icmpInst, BasicBlockFrame &basicBlockframe);
   // 处理所有函数调用
   void ProcessCallbase(const CallBase *call, FunctionFrame &funcFrame, BasicBlockFrame &basicBlockframe);
