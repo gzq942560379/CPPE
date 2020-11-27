@@ -1,3 +1,5 @@
+#pragma once
+
 /************************************************************************
  *
  * @file Dataflow.h
@@ -6,16 +8,34 @@
  *
  ***********************************************************************/
 
-#ifndef _DATAFLOW_H_
-#define _DATAFLOW_H_
-
 #include <llvm/Support/raw_ostream.h>
 #include <map>
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/CFG.h>
 #include <llvm/IR/Function.h>
+#include <set>
 
 using namespace llvm;
+using std::map;
+using std::set;
+
+// #define DEBUG
+
+///
+/// Dummy class to provide a typedef for the detailed result set
+/// For each basicblock, we compute its input dataflow val and its output dataflow val
+///
+template <class T>
+struct Dataflow
+{
+    std::map<const BasicBlock *, std::pair<T, T>> result;
+};
+
+template <class T>
+inline raw_ostream &operator<<(raw_ostream &out, const Dataflow<T> &df)
+{
+    return out;
+}
 
 ///Base dataflow visitor class, defines the dataflow function
 
@@ -30,24 +50,27 @@ public:
     /// @block the Basic Block
     /// @dfVal the input dataflow value
     /// @isForward true to compute dfVal forward, otherwise backward
-    virtual void compDFVal(BasicBlock *block, T *dfVal, bool isForward)
+    virtual void compDFVal(const BasicBlock *block, bool isForward)
     {
+#ifdef DEBUG
+        block->dump();
+#endif
         if (isForward == true)
         {
-            for (BasicBlock::iterator ii = block->begin(), ie = block->end();
+            for (auto ii = block->begin(), ie = block->end();
                  ii != ie; ++ii)
             {
-                Instruction *inst = &*ii;
-                compDFVal(inst, dfVal);
+                auto inst = &*ii;
+                compDFVal(inst);
             }
         }
         else
         {
-            for (BasicBlock::reverse_iterator ii = block->rbegin(), ie = block->rend();
+            for (auto ii = block->rbegin(), ie = block->rend();
                  ii != ie; ++ii)
             {
-                Instruction *inst = &*ii;
-                compDFVal(inst, dfVal);
+                auto inst = &*ii;
+                compDFVal(inst);
             }
         }
     }
@@ -58,101 +81,12 @@ public:
     /// @inst the Instruction
     /// @dfVal the input dataflow value
     /// @return true if dfVal changed
-    virtual void compDFVal(Instruction *inst, T *dfVal) = 0;
+    virtual void compDFVal(const Instruction *inst) = 0;
 
     ///
     /// Merge of two dfVals, dest will be ther merged result
     /// @return true if dest changed
     ///
     virtual void merge(T *dest, const T &src) = 0;
+
 };
-
-///
-/// Dummy class to provide a typedef for the detailed result set
-/// For each basicblock, we compute its input dataflow val and its output dataflow val
-///
-template <class T>
-struct DataflowResult
-{
-    typedef typename std::map<BasicBlock *, std::pair<T, T>> Type;
-};
-
-///
-/// Compute a forward iterated fixedpoint dataflow function, using a user-supplied
-/// visitor function. Note that the caller must ensure that the function is
-/// in fact a monotone function, as otherwise the fixedpoint may not terminate.
-///
-/// @param fn The function
-/// @param visitor A function to compute dataflow vals
-/// @param result The results of the dataflow
-/// @initval the Initial dataflow value
-template <class T>
-void compForwardDataflow(Function *fn,
-                         DataflowVisitor<T> *visitor,
-                         typename DataflowResult<T>::Type *result,
-                         const T &initval)
-{
-    return;
-}
-///
-/// Compute a backward iterated fixedpoint dataflow function, using a user-supplied
-/// visitor function. Note that the caller must ensure that the function is
-/// in fact a monotone function, as otherwise the fixedpoint may not terminate.
-///
-/// @param fn The function
-/// @param visitor A function to compute dataflow vals
-/// @param result The results of the dataflow
-/// @initval The initial dataflow value
-template <class T>
-void compBackwardDataflow(Function *fn,
-                          DataflowVisitor<T> *visitor,
-                          typename DataflowResult<T>::Type *result,
-                          const T &initval)
-{
-
-    std::set<BasicBlock *> worklist;
-
-    // Initialize the worklist with all exit blocks
-    for (Function::iterator bi = fn->begin(); bi != fn->end(); ++bi)
-    {
-        BasicBlock *bb = &*bi;
-        result->insert(std::make_pair(bb, std::make_pair(initval, initval)));
-        worklist.insert(bb);
-    }
-
-    // Iteratively compute the dataflow result
-    while (!worklist.empty())
-    {
-        BasicBlock *bb = *worklist.begin();
-        worklist.erase(worklist.begin());
-
-        // Merge all incoming value
-        T bbExitVal = (*result)[bb].second;
-        for (auto si = succ_begin(bb), se = succ_end(bb); si != se; si++)
-        {
-            BasicBlock *succ = *si;
-            visitor->merge(&bbExitVal, (*result)[succ].first);
-        }
-
-        (*result)[bb].second = bbExitVal;
-        visitor->compDFVal(bb, &bbExitVal, false);
-
-        // If outgoing value changed, propagate it along the CFG
-        if (bbExitVal == (*result)[bb].first)
-            continue;
-        (*result)[bb].first = bbExitVal;
-
-        for (pred_iterator pi = pred_begin(bb), pe = pred_end(bb); pi != pe; pi++)
-        {
-            worklist.insert(*pi);
-        }
-    }
-}
-
-template <class T>
-void printDataflowResult(raw_ostream &out,
-                         const typename DataflowResult<T>::Type &dfresult)
-{
-}
-
-#endif /* !_DATAFLOW_H_ */

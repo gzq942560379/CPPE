@@ -58,10 +58,13 @@ struct FuncPtrPass : public ModulePass
 
     bool runOnModule(Module &M) override
     {
-        errs() << "Hello: ";
-        errs().write_escaped(M.getName()) << '\n';
-        M.dump();
-        errs() << "------------------------------\n";
+        PointerAnalysisVisitor visitor;
+
+        for (Function &f : M)
+            if (!f.getName().startswith("llvm.dbg.") && !f.isDeclaration())
+                visitor.VisitFunction(f, nullptr, nullptr);
+
+        visitor.output();
         return false;
     }
 };
@@ -69,8 +72,8 @@ struct FuncPtrPass : public ModulePass
 char FuncPtrPass::ID = 0;
 static RegisterPass<FuncPtrPass> X("funcptrpass", "Print function call instruction");
 
-char PointerAnalysis::ID = 0;
-static RegisterPass<PointerAnalysis> Y("liveness", "Liveness Dataflow Analysis");
+// char PointerAnalysis::ID = 0;
+// static RegisterPass<Liveness> Y("liveness", "Liveness Dataflow Analysis");
 
 static cl::opt<std::string>
     InputFilename(cl::Positional,
@@ -101,8 +104,7 @@ int main(int argc, char **argv)
     Passes.add(llvm::createPromoteMemoryToRegisterPass());
 
     /// Your pass to print Function and Call Instructions
-    Passes.add(new PointerAnalysis());
-    //Passes.add(new FuncPtrPass());
+    Passes.add(new FuncPtrPass());
     Passes.run(*M.get());
 #ifndef NDEBUG
     system("pause");

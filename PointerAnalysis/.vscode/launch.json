@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/assignment3",
             "args": [
-                "test-bc/test00.bc"
+                "test-bc/test04.bc"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -23,7 +23,8 @@
                     "text": "-enable-pretty-printing",
                     "ignoreFailures": true
                 }
-            ]
+            ],
+            "preLaunchTask": "make"
         }
     ]
 }

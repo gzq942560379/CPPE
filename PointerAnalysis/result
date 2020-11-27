@@ -1,0 +1,189 @@
+[100%] Built target assignment3
+00 --------------------------------------------------
+14 : plus, minus
+24 : foo
+27 : foo
+sh: 1: pause: not found
+01 --------------------------------------------------
+22 : plus, minus
+sh: 1: pause: not found
+02 --------------------------------------------------
+28 : plus, minus
+sh: 1: pause: not found
+03 --------------------------------------------------
+27 : plus, minus
+sh: 1: pause: not found
+04 --------------------------------------------------
+10 : plus, minus
+26 : foo
+33 : foo
+sh: 1: pause: not found
+05 --------------------------------------------------
+33 : minus, plus
+sh: 1: pause: not found
+06 --------------------------------------------------
+11 : malloc
+15 : plus
+21 : minus
+sh: 1: pause: not found
+07 --------------------------------------------------
+19 : plus
+25 : minus
+sh: 1: pause: not found
+08 --------------------------------------------------
+25 : plus
+31 : minus
+sh: 1: pause: not found
+09 --------------------------------------------------
+21 : malloc
+27 : plus
+33 : minus
+sh: 1: pause: not found
+10 --------------------------------------------------
+25 : malloc
+31 : minus
+37 : plus
+sh: 1: pause: not found
+11 --------------------------------------------------
+11 : plus, minus
+18 : malloc
+27 : clever
+sh: 1: pause: not found
+12 --------------------------------------------------
+11 : plus, minus
+21 : malloc
+30 : clever
+sh: 1: pause: not found
+13 --------------------------------------------------
+15 : plus, minus
+31 : clever
+sh: 1: pause: not found
+14 --------------------------------------------------
+10 : plus, minus
+14 : foo
+30 : clever
+sh: 1: pause: not found
+15 --------------------------------------------------
+15 : plus, minus
+19 : foo
+35 : clever
+sh: 1: pause: not found
+16 --------------------------------------------------
+16 : foo
+17 : plus
+24 : malloc
+32 : clever
+sh: 1: pause: not found
+17 --------------------------------------------------
+20 : foo
+21 : plus, minus
+37 : clever
+sh: 1: pause: not found
+18 --------------------------------------------------
+30 : foo, clever
+31 : plus, minus
+sh: 1: pause: not found
+19 --------------------------------------------------
+24 : foo
+28 : clever
+30 : plus
+sh: 1: pause: not found
+20 --------------------------------------------------
+47 : foo, clever
+48 : plus, minus
+sh: 1: pause: not found
+21 --------------------------------------------------
+15 : plus, minus
+31 : clever
+sh: 1: pause: not found
+22 --------------------------------------------------
+17 : plus
+31 : make_simple_alias
+32 : foo
+sh: 1: pause: not found
+23 --------------------------------------------------
+14 : plus, minus
+25 : malloc
+26 : malloc
+30 : foo
+31 : make_simple_alias
+33 : foo
+sh: 1: pause: not found
+24 --------------------------------------------------
+17 : minus
+29 : make_no_alias
+30 : foo
+sh: 1: pause: not found
+25 --------------------------------------------------
+21 : plus
+37 : make_alias
+38 : foo
+sh: 1: pause: not found
+26 --------------------------------------------------
+31 : malloc
+39 : plus
+40 : make_alias
+45 : minus
+sh: 1: pause: not found
+27 --------------------------------------------------
+22 : plus
+27 : foo
+44 : clever
+sh: 1: pause: not found
+28 --------------------------------------------------
+22 : plus
+29 : foo
+34 : malloc
+36 : malloc
+38 : malloc
+47 : clever
+sh: 1: pause: not found
+29 --------------------------------------------------
+21 : plus, minus
+26 : clever
+27 : plus, minus
+41 : malloc
+46 : foo
+51 : foo
+sh: 1: pause: not found
+30 --------------------------------------------------
+41 : foo, clever
+42 : plus, minus
+sh: 1: pause: not found
+31 --------------------------------------------------
+39 : foo
+40 : plus
+44 : clever
+45 : plus, minus
+47 : plus, minus
+sh: 1: pause: not found
+32 --------------------------------------------------
+38 : foo
+56 : clever
+57 : minus
+58 : minus
+sh: 1: pause: not found
+33 --------------------------------------------------
+27 : minus
+38 : foo
+70 : make_simple_alias
+75 : make_alias
+81 : clever
+82 : minus
+83 : minus
+84 : swap_w
+85 : minus
+sh: 1: pause: not found
+34 --------------------------------------------------
+39 : swap_w
+40 : plus, minus
+49 : make_simple_alias
+51 : make_simple_alias
+52 : foo
+68 : make_simple_alias
+70 : make_simple_alias
+75 : make_alias
+79 : clever
+80 : clever
+81 : minus
+sh: 1: pause: not found

@@ -1,3 +1,5 @@
+#pragma once
+
 //===- Hello.cpp - Example code from "Writing an LLVM Pass" ---------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -20,50 +22,94 @@
 #include "Dataflow.h"
 
 using namespace llvm;
+using std::map;
+using std::set;
 
 class PointerAnalysisInfo
 {
+public:
+    map<const Instruction *, set<const Value *> *> varMap;
+
     bool operator==(const PointerAnalysisInfo &info) const
     {
-        return false;
+        return varMap == info.varMap;
+    }
+
+    void print()
+    {
+        errs() << "PointerAnalysisInfo : -------------------------------------\n";
+        for (auto pair : varMap)
+        {
+            pair.first->dump();
+            errs() << " -> \n";
+            for (auto value : *pair.second)
+            {
+                value->dump();
+            }
+        }
+        errs() << "-----------------------------------------------------------\n";
     }
 };
 
-inline raw_ostream &operator<<(raw_ostream &out, const PointerAnalysisInfo &info)
+class FunctionFrame
 {
-    return out;
-}
+public:
+    const Function &func;
+    const Function *callerFunc = nullptr;
+    map<const Value *, set<const Value *> *> alias;
+    Dataflow<PointerAnalysisInfo> df;
+    const BasicBlock *activeBlock;
+    const map<const Argument *, set<const Value *> *> *argsMap = nullptr;
+    set<const Value *> *lastCallReturnVal = nullptr;
+    FunctionFrame(const Function &func, const map<const Argument *, set<const Value *> *> *argsMap, const Function *callerFunc) : func(func), argsMap(argsMap), callerFunc(callerFunc), lastCallReturnVal(nullptr){};
+};
 
 class PointerAnalysisVisitor : public DataflowVisitor<struct PointerAnalysisInfo>
 {
 public:
-    PointerAnalysisVisitor() {}
-    void merge(PointerAnalysisInfo *dest, const PointerAnalysisInfo &src) override
-    {
-    }
+    map<int, set<const Function *> *> analysisResult;
+    map<const Function *, FunctionFrame *> funcMap;
 
-    void compDFVal(Instruction *inst, PointerAnalysisInfo *dfval) override
+    PointerAnalysisVisitor()
     {
-        if (isa<DbgInfoIntrinsic>(inst))
-            return;
     }
+    void output() const;
+    void updateOutput(int line, const Function *func);
+
+    void ProcessPHINode(const PHINode *phi);
+    void ProcessCallBase(const CallBase *call);
+    void ProcessAllocaInst(const AllocaInst *alloc);
+    void ProcessBitCastInst(const BitCastInst *bitcast);
+    void ProcessGetElementPtrInst(const GetElementPtrInst *getElementPtr);
+    void ProcessStoreInst(const StoreInst *store);
+    void ProcessLoadInst(const LoadInst *load);
+    void ProcessReturnInst(const ReturnInst *ret);
+    void ProcessCallMemcpy(const CallBase *call);
+
+    // 合并两个分析结果
+    void merge(PointerAnalysisInfo *dest, const PointerAnalysisInfo &src) override;
+    // 处理BasicBlock中的指令，调用对应指令类型的Process函数
+    void compDFVal(const Instruction *inst) override;
+    // 处理BasicBlock中的指令
+    void compDFVal(const BasicBlock *block, bool isForward) override;
+    // 遍历调用图
+    void VisitFunction(const Function &func, const map<const Argument *, set<const Value *> *> *argsMap, const Function *callerFunc);
+
+    // 判断是否是别名
+    bool IsAlias(const Value *val);
+    // 解析别名
+    set<const Value *> GetAlias(const Value *val);
+    // 更新别名
+    void UpdateAlias(const Instruction *alias, const Value *value);
+    void UpdateAlias(const Instruction *alias, const set<const Value *> *valSet);
+    // 检查Value是否在数据流中
+    bool CheckInDataFlow(const Instruction *inst);
+    // 从数据流中获取VarSet
+    const set<const Value *> *GetVerSetFromDataFlow(const Instruction *inst);
+    // 更新DataFlow
+    void UpdateToDataFlow(const Instruction *inst, const set<const Value *> *varSet);
+
+    void compForwardDataflow(const Function *fn, Dataflow<PointerAnalysisInfo> *df, const PointerAnalysisInfo &initval);
 };
 
-class PointerAnalysis : public FunctionPass
-{
-public:
-    static char ID;
-    PointerAnalysis() : FunctionPass(ID) {}
 
-    bool runOnFunction(Function &F) override
-    {
-        F.dump();
-        // PointerAnalysisVisitor visitor;
-        // DataflowResult<PointerAnalysisInfo>::Type result;
-        // PointerAnalysisInfo initval;
-
-        // compBackwardDataflow(&F, &visitor, &result, initval);
-        // printDataflowResult<PointerAnalysisInfo>(errs(), result);
-        return false;
-    }
-};
