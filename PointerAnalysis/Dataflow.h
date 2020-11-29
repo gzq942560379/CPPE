@@ -88,5 +88,4 @@ public:
     /// @return true if dest changed
     ///
     virtual void merge(T *dest, const T &src) = 0;
-
 };

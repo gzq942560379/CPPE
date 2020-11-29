@@ -185,5 +185,5 @@ sh: 1: pause: not found
 75 : make_alias
 79 : clever
 80 : clever
-81 : minus
+81 : plus, minus
 sh: 1: pause: not found

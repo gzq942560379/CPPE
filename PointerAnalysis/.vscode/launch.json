@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/assignment3",
             "args": [
-                "test-bc/test04.bc"
+                "test-bc/test34.bc"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

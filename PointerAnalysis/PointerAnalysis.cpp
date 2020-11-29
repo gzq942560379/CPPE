@@ -2,9 +2,9 @@
 
 void PointerAnalysisVisitor::ProcessCallBase(const CallBase *call)
 {
-#ifdef DEBUG
-    call->dump();
-#endif
+    // #ifdef DEBUG
+    //     call->dump();
+    // #endif
     auto calledOperandSet = GetAlias(call->getCalledOperand());
 
     set<const Value *> valSet;
@@ -28,7 +28,7 @@ void PointerAnalysisVisitor::ProcessCallBase(const CallBase *call)
 
             if (func->getName().startswith("malloc"))
             {
-                UpdateToDataFlow(call, &valSet);
+                UpdateToDataFlow(call, &valSet, call->getFunction());
                 return;
             }
             else // 自定义函数
@@ -41,16 +41,16 @@ void PointerAnalysisVisitor::ProcessCallBase(const CallBase *call)
                     auto passedVarSet = GetAlias(call->getArgOperand(i));
                     argsAliasSet->insert(passedVarSet.begin(), passedVarSet.end());
                     argsMap.insert(std::make_pair(func->getArg(i), argsAliasSet));
-#ifdef DEBUG
-                    errs() << "Init Argment : ------------------------------\n";
-                    func->getArg(i)->dump();
-                    errs() << " -> \n";
-                    for (auto value : *argsAliasSet)
-                    {
-                        value->dump();
-                    }
-                    errs() << "---------------------------------------------\n";
-#endif
+                    // #ifdef DEBUG
+                    //                     errs() << "Init Argment : ------------------------------\n";
+                    //                     func->getArg(i)->dump();
+                    //                     errs() << " -> \n";
+                    //                     for (auto value : *argsAliasSet)
+                    //                     {
+                    //                         value->dump();
+                    //                     }
+                    //                     errs() << "---------------------------------------------\n";
+                    // #endif
                 }
                 // 调用函数
                 VisitFunction(*func, &argsMap, call->getFunction());
@@ -106,9 +106,9 @@ void PointerAnalysisVisitor::ProcessReturnInst(const ReturnInst *ret)
 
 void PointerAnalysisVisitor::ProcessPHINode(const PHINode *phi)
 {
-#ifdef DEBUG
-    phi->dump();
-#endif
+    // #ifdef DEBUG
+    //     phi->dump();
+    // #endif
     if (!(phi->getType()->isFunctionTy() || phi->getType()->isPointerTy()))
         return;
 
@@ -124,9 +124,9 @@ void PointerAnalysisVisitor::ProcessPHINode(const PHINode *phi)
 // store 将storeValue的aliasVakSet 或 其 本身（不是alias）存入target Value
 void PointerAnalysisVisitor::ProcessStoreInst(const StoreInst *store)
 {
-#ifdef DEBUG
-    store->dump();
-#endif
+    // #ifdef DEBUG
+    //     store->dump();
+    // #endif
     set<const Value *> valSet;
     auto storeValSet = GetAlias(store->getOperand(0));
     auto targetValSet = GetAlias(store->getOperand(1));
@@ -135,25 +135,25 @@ void PointerAnalysisVisitor::ProcessStoreInst(const StoreInst *store)
     {
         assert(isa<Instruction>(targetValue));
         auto inst = dyn_cast<Instruction>(targetValue);
-        assert(CheckInDataFlow(inst));
-        UpdateToDataFlow(inst, &valSet);
+        assert(CheckInDataFlow(inst, store->getFunction()));
+        UpdateToDataFlow(inst, &valSet, store->getFunction());
     }
 }
 
 // load的值是alias
 void PointerAnalysisVisitor::ProcessLoadInst(const LoadInst *load)
 {
-#ifdef DEBUG
-    load->dump();
-#endif
+    // #ifdef DEBUG
+    //     load->dump();
+    // #endif
     set<const Value *> aliasVarSet;
     auto srcValSet = GetAlias(load->getOperand(0));
     for (auto srcVal : srcValSet)
     {
         assert(isa<Instruction>(srcVal));
         auto inst = dyn_cast<Instruction>(srcVal);
-        assert(CheckInDataFlow(inst));
-        auto varSet = GetVerSetFromDataFlow(inst);
+        assert(CheckInDataFlow(inst, load->getFunction()));
+        auto varSet = GetVerSetFromDataFlow(inst, load->getFunction());
         aliasVarSet.insert(varSet->begin(), varSet->end());
     }
     UpdateAlias(load, &aliasVarSet);
@@ -162,16 +162,16 @@ void PointerAnalysisVisitor::ProcessLoadInst(const LoadInst *load)
 // 类似于 先load 再store
 void PointerAnalysisVisitor::ProcessCallMemcpy(const CallBase *call)
 {
-#ifdef DEBUG
-    call->dump();
-#endif
+    // #ifdef DEBUG
+    //     call->dump();
+    // #endif
     set<const Value *> valSet;
     auto storePointerSet = GetAlias(call->getArgOperand(1));
     for (auto storeVal : storePointerSet)
     {
         assert(isa<Instruction>(storeVal));
         auto inst = dyn_cast<Instruction>(storeVal);
-        auto storeValSet = GetVerSetFromDataFlow(inst);
+        auto storeValSet = GetVerSetFromDataFlow(inst, call->getFunction());
         valSet.insert(storeValSet->begin(), storeValSet->end());
     }
 
@@ -180,33 +180,33 @@ void PointerAnalysisVisitor::ProcessCallMemcpy(const CallBase *call)
     {
         assert(isa<Instruction>(targetValue));
         auto inst = dyn_cast<Instruction>(targetValue);
-        assert(CheckInDataFlow(inst));
-        UpdateToDataFlow(inst, &valSet);
+        assert(CheckInDataFlow(inst, call->getFunction()));
+        UpdateToDataFlow(inst, &valSet, call->getFunction());
     }
 }
 
 void PointerAnalysisVisitor::ProcessAllocaInst(const AllocaInst *alloc)
 {
-#ifdef DEBUG
-    alloc->dump();
-#endif
+    // #ifdef DEBUG
+    //     alloc->dump();
+    // #endif
     set<const Value *> valSet;
-    UpdateToDataFlow(alloc, &valSet);
+    UpdateToDataFlow(alloc, &valSet, alloc->getFunction());
 }
 
 void PointerAnalysisVisitor::ProcessBitCastInst(const BitCastInst *bitcast)
 {
-#ifdef DEBUG
-    bitcast->dump();
-#endif
+    // #ifdef DEBUG
+    //     bitcast->dump();
+    // #endif
     UpdateAlias(bitcast, bitcast->getOperand(0));
 }
 
 void PointerAnalysisVisitor::ProcessGetElementPtrInst(const GetElementPtrInst *getElementPtr)
 {
-#ifdef DEBUG
-    getElementPtr->dump();
-#endif
+    // #ifdef DEBUG
+    //     getElementPtr->dump();
+    // #endif
     UpdateAlias(getElementPtr, getElementPtr->getOperand(0));
 }
 
@@ -249,9 +249,7 @@ void PointerAnalysisVisitor::compDFVal(const Instruction *inst)
 
 void PointerAnalysisVisitor::compDFVal(const BasicBlock *block, bool isForward)
 {
-#ifdef DEBUG
-    block->dump();
-#endif
+
     funcMap[block->getParent()]->activeBlock = block;
     if (isForward == true)
     {
@@ -276,34 +274,56 @@ void PointerAnalysisVisitor::compDFVal(const BasicBlock *block, bool isForward)
 void PointerAnalysisVisitor::VisitFunction(const Function &func, const map<const Argument *, set<const Value *> *> *argsMap, const Function *callerFunc)
 {
     funcMap.insert(std::make_pair<const Function *, FunctionFrame *>(&func, new FunctionFrame(func, argsMap, callerFunc)));
-
     PointerAnalysisInfo initval;
+    PointerAnalysisInfo dfPassToNextFunc;
+    // 调用函数传递数据流
+    if (callerFunc != nullptr)
+    {
+        auto callerFuncFrame = funcMap[callerFunc];
+        auto &nowInfo = callerFuncFrame->df.result[callerFuncFrame->activeBlock].second;
+        merge(&dfPassToNextFunc, nowInfo);
+    }
 
-    compForwardDataflow(&func, &funcMap[&func]->df, initval);
+    compForwardDataflow(&func, &funcMap[&func]->df, initval, &dfPassToNextFunc);
+
+    // 返回函数将函数更之后的数据流回传
+    if (callerFunc != nullptr)
+    {
+        auto callerFuncFrame = funcMap[callerFunc];
+        auto &nowInfo = callerFuncFrame->df.result[callerFuncFrame->activeBlock].second;
+        auto calleeFuncFrame = funcMap[&func];
+        auto &newInfo = calleeFuncFrame->df.result[calleeFuncFrame->activeBlock].second;
+        for (auto it = newInfo.varMap.begin(); it != newInfo.varMap.end();)
+        {
+            if (it->first->getFunction() == &func)
+                it = newInfo.varMap.erase(it);
+            else
+                it++;
+        }
+        nowInfo.varMap.clear();
+        merge(&nowInfo, newInfo);
+    }
 
     funcMap.erase(&func);
 }
 
-bool PointerAnalysisVisitor::CheckInDataFlow(const Instruction *inst)
+bool PointerAnalysisVisitor::CheckInDataFlow(const Instruction *inst, const Function *func)
 {
-    auto func = inst->getFunction();
     auto funcFrame = funcMap[func];
     auto info = funcFrame->df.result[funcFrame->activeBlock].second;
     return info.varMap.find(inst) != info.varMap.end();
 }
 
-const set<const Value *> *PointerAnalysisVisitor::GetVerSetFromDataFlow(const Instruction *inst)
+const set<const Value *> *PointerAnalysisVisitor::GetVerSetFromDataFlow(const Instruction *inst, const Function *func)
 {
-    assert(CheckInDataFlow(inst));
-    auto func = inst->getFunction();
+    assert(CheckInDataFlow(inst, func));
     auto funcFrame = funcMap[func];
     auto info = funcFrame->df.result[funcFrame->activeBlock].second;
     return info.varMap[inst];
 }
 
-void PointerAnalysisVisitor::UpdateToDataFlow(const Instruction *inst, const set<const Value *> *varSet)
+void PointerAnalysisVisitor::UpdateToDataFlow(const Instruction *inst, const set<const Value *> *varSet, const Function *func)
 {
-    auto func = inst->getFunction();
     auto funcFrame = funcMap[func];
     auto &info = funcFrame->df.result[funcFrame->activeBlock].second;
     if (info.varMap.find(inst) == info.varMap.end())
@@ -313,16 +333,16 @@ void PointerAnalysisVisitor::UpdateToDataFlow(const Instruction *inst, const set
     info.varMap[inst]->clear();
     info.varMap[inst]->insert(varSet->begin(), varSet->end());
 
-#ifdef DEBUG
-    errs() << "UpdateToDataFlow : -------------------------------------\n";
-    inst->dump();
-    errs() << " -> \n";
-    for (auto value : *varSet)
-    {
-        value->dump();
-    }
-    errs() << "--------------------------------------------------------\n";
-#endif
+    // #ifdef DEBUG
+    //     errs() << "UpdateToDataFlow : -------------------------------------\n";
+    //     inst->dump();
+    //     errs() << " -> \n";
+    //     for (auto value : *varSet)
+    //     {
+    //         value->dump();
+    //     }
+    //     errs() << "--------------------------------------------------------\n";
+    // #endif
 }
 
 // 判断是否是Alias
@@ -385,16 +405,16 @@ void PointerAnalysisVisitor::UpdateAlias(const Instruction *alias, const Value *
     set<const Value *> valAliasSet = GetAlias(value);
     aliasVarSet->insert(valAliasSet.begin(), valAliasSet.end());
     funcMap[alias->getFunction()]->alias.insert(std::make_pair(alias, aliasVarSet));
-#ifdef DEBUG
-    errs() << "Update Alias : ------------------------------\n";
-    alias->dump();
-    errs() << " -> \n";
-    for (auto value : *aliasVarSet)
-    {
-        value->dump();
-    }
-    errs() << "---------------------------------------------\n";
-#endif
+    // #ifdef DEBUG
+    //     errs() << "Update Alias : ------------------------------\n";
+    //     alias->dump();
+    //     errs() << " -> \n";
+    //     for (auto value : *aliasVarSet)
+    //     {
+    //         value->dump();
+    //     }
+    //     errs() << "---------------------------------------------\n";
+    // #endif
 }
 
 void PointerAnalysisVisitor::UpdateAlias(const Instruction *alias, const set<const Value *> *valSet)
@@ -406,16 +426,16 @@ void PointerAnalysisVisitor::UpdateAlias(const Instruction *alias, const set<con
         aliasVarSet->insert(valAliasSet.begin(), valAliasSet.end());
     }
     funcMap[alias->getFunction()]->alias.insert(std::make_pair(alias, aliasVarSet));
-#ifdef DEBUG
-    errs() << "Update Alias : ------------------------------\n";
-    alias->dump();
-    errs() << " -> \n";
-    for (auto value : *aliasVarSet)
-    {
-        value->dump();
-    }
-    errs() << "---------------------------------------------\n";
-#endif
+    // #ifdef DEBUG
+    //     errs() << "Update Alias : ------------------------------\n";
+    //     alias->dump();
+    //     errs() << " -> \n";
+    //     for (auto value : *aliasVarSet)
+    //     {
+    //         value->dump();
+    //     }
+    //     errs() << "---------------------------------------------\n";
+    // #endif
 }
 
 void PointerAnalysisVisitor::updateOutput(int line, const Function *func)
@@ -453,7 +473,8 @@ void PointerAnalysisVisitor::output() const
 
 void PointerAnalysisVisitor::compForwardDataflow(const Function *fn,
                                                  Dataflow<PointerAnalysisInfo> *df,
-                                                 const PointerAnalysisInfo &initval)
+                                                 const PointerAnalysisInfo &initval,
+                                                 const PointerAnalysisInfo *dfFromLastFunc)
 {
     set<const BasicBlock *> worklist;
 
@@ -464,7 +485,7 @@ void PointerAnalysisVisitor::compForwardDataflow(const Function *fn,
         df->result.insert(std::make_pair(bb, std::make_pair(initval, initval)));
         worklist.insert(bb);
     }
-
+    merge(&df->result[&*fn->begin()].first, *dfFromLastFunc);
     // Iteratively compute the dataflow result
     while (!worklist.empty())
     {
@@ -477,12 +498,24 @@ void PointerAnalysisVisitor::compForwardDataflow(const Function *fn,
             const BasicBlock *pred = *pi;
             merge(&df->result[bb].first, df->result[pred].second);
         }
+
+#ifdef DEBUG
+        errs() << "\n";
+        errs() << "Block input : ---------------------------------------------------\n";
+        df->result[bb].first.print();
+#endif
+#ifdef DEBUG
+        bb->dump();
+#endif
         PointerAnalysisInfo prevBBExitVal = df->result[bb].second;
         df->result[bb].second = df->result[bb].first;
         compDFVal(bb, true);
-
 #ifdef DEBUG
+
+        errs() << "Block outout : \n";
         df->result[bb].second.print();
+        errs() << "-----------------------------------------------------------------\n";
+        errs() << "\n";
 #endif
 
         // If outgoing value changed, propagate it along the CFG

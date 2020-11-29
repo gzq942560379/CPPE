@@ -103,13 +103,11 @@ public:
     void UpdateAlias(const Instruction *alias, const Value *value);
     void UpdateAlias(const Instruction *alias, const set<const Value *> *valSet);
     // 检查Value是否在数据流中
-    bool CheckInDataFlow(const Instruction *inst);
+    bool CheckInDataFlow(const Instruction *inst, const Function *func);
     // 从数据流中获取VarSet
-    const set<const Value *> *GetVerSetFromDataFlow(const Instruction *inst);
+    const set<const Value *> *GetVerSetFromDataFlow(const Instruction *inst, const Function *func);
     // 更新DataFlow
-    void UpdateToDataFlow(const Instruction *inst, const set<const Value *> *varSet);
+    void UpdateToDataFlow(const Instruction *inst, const set<const Value *> *varSet, const Function *func);
 
-    void compForwardDataflow(const Function *fn, Dataflow<PointerAnalysisInfo> *df, const PointerAnalysisInfo &initval);
+    void compForwardDataflow(const Function *fn, Dataflow<PointerAnalysisInfo> *df, const PointerAnalysisInfo &initval, const PointerAnalysisInfo *dfFromLastFunc);
 };
-
-
